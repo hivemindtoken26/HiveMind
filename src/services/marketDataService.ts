@@ -22,15 +22,27 @@ type DexPair = {
 
 type FeedSource = "live" | "mock";
 
+function toFiniteNumber(value: number | string | undefined): number | undefined {
+  const numberValue =
+    typeof value === "string" ? Number(value) : value;
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+}
+
+function compactPatch(patch: TokenPatch): TokenPatch {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined),
+  ) as TokenPatch;
+}
+
 function patchFromDexPair(pair: DexPair): TokenPatch {
-  return {
-    priceUsd: pair.priceUsd ? Number(pair.priceUsd) : undefined,
-    change24hPct: pair.priceChange?.h24,
-    volume24hUsd: pair.volume?.h24,
-    liquidityUsd: pair.liquidity?.usd,
-    marketCapUsd: pair.fdv,
+  return compactPatch({
+    priceUsd: toFiniteNumber(pair.priceUsd),
+    change24hPct: toFiniteNumber(pair.priceChange?.h24),
+    volume24hUsd: toFiniteNumber(pair.volume?.h24),
+    liquidityUsd: toFiniteNumber(pair.liquidity?.usd),
+    marketCapUsd: toFiniteNumber(pair.fdv),
     mintAddress: pair.baseToken?.address,
-  };
+  });
 }
 
 async function fetchDexPairByAddress(address: string): Promise<DexPair | null> {
@@ -143,6 +155,10 @@ async function fetchSolanaRpcPatch(): Promise<TokenPatch> {
       }),
     });
     if (!response?.ok) throw new Error("RPC request failed");
+    const data = (await response.json().catch(() => undefined)) as
+      | { result?: unknown }
+      | undefined;
+    if (!data?.result) throw new Error("RPC returned no account data");
     // The response proves account accessibility; we keep pricing from market providers.
     return {};
   } catch {
@@ -154,7 +170,7 @@ async function fetchSolanaRpcPatch(): Promise<TokenPatch> {
 
 function applyPatches(tokens: Token[], patches: Record<string, TokenPatch>): Token[] {
   return tokens.map((token) => {
-    const patch = patches[token.symbol.toUpperCase()];
+    const patch = compactPatch(patches[token.symbol.toUpperCase()] ?? {});
     return patch ? { ...token, ...patch } : token;
   });
 }
