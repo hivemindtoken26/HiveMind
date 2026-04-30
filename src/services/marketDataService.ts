@@ -128,7 +128,9 @@ async function fetchBirdeyePatches(): Promise<Record<string, TokenPatch>> {
 }
 
 async function fetchSolanaRpcPatch(): Promise<TokenPatch> {
-  const endpoint = import.meta.env.VITE_SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+  const endpoint =
+    import.meta.env.VITE_SOLANA_RPC_URL ||
+    "https://api.mainnet-beta.solana.com";
   try {
     const response = await fetch(endpoint, {
       method: "POST",
@@ -140,7 +142,7 @@ async function fetchSolanaRpcPatch(): Promise<TokenPatch> {
         params: ["5dAXtHS6xBEwuCQsgpwZDiqaByWdiQSvRYTsLnpf7i9u", { encoding: "jsonParsed" }],
       }),
     });
-    if (!response.ok) throw new Error("RPC request failed");
+    if (!response?.ok) throw new Error("RPC request failed");
     // The response proves account accessibility; we keep pricing from market providers.
     return {};
   } catch {
