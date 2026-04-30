@@ -140,9 +140,13 @@ async function fetchBirdeyePatches(): Promise<Record<string, TokenPatch>> {
 }
 
 async function fetchSolanaRpcPatch(): Promise<TokenPatch> {
-  const endpoint =
-    import.meta.env.VITE_SOLANA_RPC_URL ||
-    "https://api.mainnet-beta.solana.com";
+  const endpoint = import.meta.env.VITE_SOLANA_RPC_URL;
+  if (!endpoint) {
+    return {
+      mintAddress: "5dAXtHS6xBEwuCQsgpwZDiqaByWdiQSvRYTsLnpf7i9u",
+    };
+  }
+
   try {
     const response = await fetch(endpoint, {
       method: "POST",

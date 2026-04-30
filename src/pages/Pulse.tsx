@@ -76,6 +76,8 @@ export function Pulse() {
   const [plan, setPlan] = useState<"FREE" | "PRO" | "PREMIUM">("FREE");
   const [paidSignals, setPaidSignals] = useState<PaidSignal[]>([]);
   const [watcherIdle, setWatcherIdle] = useState(getWatcherIdleMessage(Date.now()));
+  const [authBusy, setAuthBusy] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   async function loadData() {
     const marketFeed = await fetchMvpTokenFeed();
@@ -139,27 +141,51 @@ export function Pulse() {
   }, []);
 
   async function handleSignUp() {
+    if (authBusy) return;
+    if (!email || !password) {
+      setStatus("Enter an email and password first.");
+      return;
+    }
     try {
+      setAuthBusy(true);
       await signUpWithEmail(email, password);
       setStatus("Sign-up request sent. Check your inbox for confirmation.");
       await loadData();
     } catch (err) {
-      setStatus((err as Error).message);
+      const message = (err as Error).message;
+      setStatus(
+        message.toLowerCase().includes("rate")
+          ? "Too many sign-up attempts. Please wait a minute before trying again."
+          : message,
+      );
+    } finally {
+      setAuthBusy(false);
     }
   }
 
   async function handleSignIn() {
+    if (authBusy) return;
+    if (!email || !password) {
+      setStatus("Enter an email and password first.");
+      return;
+    }
     try {
+      setAuthBusy(true);
       await signInWithEmail(email, password);
       setStatus("Signed in.");
       await loadData();
     } catch (err) {
       setStatus((err as Error).message);
+    } finally {
+      setAuthBusy(false);
     }
   }
 
   async function handleProfileSave() {
-    if (!userId) return;
+    if (!userId) {
+      setStatus("Sign in before saving your profile.");
+      return;
+    }
     try {
       await upsertProfile(userId, displayName, username);
       setStatus("Profile saved.");
@@ -169,7 +195,10 @@ export function Pulse() {
   }
 
   async function handleSeedData() {
-    if (!userId) return;
+    if (!userId) {
+      setStatus("Sign in before writing watchlist or report data.");
+      return;
+    }
     try {
       const watchlistId = await createWatchlist(userId, "Guardian Watchlist");
       await addWatchlistToken(
@@ -204,6 +233,10 @@ export function Pulse() {
   }
 
   async function handleSignOut() {
+    if (!userId) {
+      setStatus("No active session to sign out.");
+      return;
+    }
     try {
       await signOut();
       setUserId(null);
@@ -234,9 +267,11 @@ export function Pulse() {
   }
 
   async function handleUpgradeTrigger(targetPlan: "PRO" | "PREMIUM") {
+    if (checkoutBusy) return;
     try {
+      setCheckoutBusy(true);
       setStatus(`Opening Stripe checkout for ${targetPlan}...`);
-      const response = await fetch("/api/stripe/checkout", {
+      const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -245,13 +280,18 @@ export function Pulse() {
           email: email || undefined,
         }),
       });
-      const data = (await response.json()) as { url?: string; error?: string };
+      const data = (await response.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
       if (!response.ok || !data.url) {
-        throw new Error(data.error ?? "Could not create checkout session.");
+        throw new Error(data.error ?? "Checkout is not configured yet.");
       }
       window.location.assign(data.url);
     } catch (err) {
       setStatus(`Upgrade failed: ${(err as Error).message}`);
+    } finally {
+      setCheckoutBusy(false);
     }
   }
 
@@ -307,11 +347,11 @@ export function Pulse() {
             placeholder="Password"
           />
           <div className="pulse-actions">
-            <button onClick={handleSignUp} type="button">
-              Sign up
+            <button onClick={handleSignUp} type="button" disabled={authBusy}>
+              {authBusy ? "Working..." : "Sign up"}
             </button>
-            <button onClick={handleSignIn} type="button">
-              Sign in
+            <button onClick={handleSignIn} type="button" disabled={authBusy}>
+              {authBusy ? "Working..." : "Sign in"}
             </button>
             <button onClick={handleSignOut} type="button">
               Sign out
@@ -457,6 +497,7 @@ export function Pulse() {
           <button
             type="button"
             className={plan === "PRO" ? "is-active-tier" : "pulse-button--pro"}
+            disabled={checkoutBusy}
             onClick={() => void handleTierButtonClick("PRO")}
           >
             {plan === "PRO" ? "Pro active" : "Upgrade to Pro"}
@@ -464,6 +505,7 @@ export function Pulse() {
           <button
             type="button"
             className={plan === "PREMIUM" ? "is-active-tier" : "pulse-button--premium"}
+            disabled={checkoutBusy}
             onClick={() => void handleTierButtonClick("PREMIUM")}
           >
             {plan === "PREMIUM" ? "Premium active" : "Upgrade to Premium"}
@@ -473,9 +515,10 @@ export function Pulse() {
         <button
           type="button"
           className="pulse-checkout"
+          disabled={checkoutBusy}
           onClick={() => handleUpgradeTrigger(plan === "FREE" ? "PRO" : "PREMIUM")}
         >
-          Upgrade now with Stripe
+          {checkoutBusy ? "Opening Stripe..." : "Upgrade now with Stripe"}
         </button>
         {visibleSignals.length ? (
           <ul className="pulse-list">
@@ -485,8 +528,12 @@ export function Pulse() {
                   {signal.title} - {signal.detail}
                 </span>
                 {signal.isLocked ? (
-                  <button type="button" onClick={() => handleUpgradeTrigger(signal.tier)}>
-                    Unlock {signal.tier}
+                  <button
+                    type="button"
+                    disabled={checkoutBusy}
+                    onClick={() => handleUpgradeTrigger(signal.tier)}
+                  >
+                    {checkoutBusy ? "Opening..." : `Unlock ${signal.tier}`}
                   </button>
                 ) : (
                   <strong>{signal.tier} unlocked</strong>
