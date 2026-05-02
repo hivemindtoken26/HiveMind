@@ -1,12 +1,12 @@
 import Stripe from "stripe";
 import type { ViteDevServer } from "vite";
 
-type PaidPlan = "PRO" | "PREMIUM";
+type PaidPlan = "BASIC" | "PRO";
 
 type CheckoutEnv = {
   STRIPE_SECRET_KEY?: string;
+  STRIPE_PRICE_ID_BASIC?: string;
   STRIPE_PRICE_ID_PRO?: string;
-  STRIPE_PRICE_ID_PREMIUM?: string;
   VITE_APP_URL?: string;
 };
 
@@ -53,27 +53,27 @@ async function createCheckoutResponse(
   env: CheckoutEnv,
 ): Promise<JsonResponse> {
   const secretKey = env.STRIPE_SECRET_KEY;
+  const basicPriceId = env.STRIPE_PRICE_ID_BASIC;
   const proPriceId = env.STRIPE_PRICE_ID_PRO;
-  const premiumPriceId = env.STRIPE_PRICE_ID_PREMIUM;
 
-  if (!secretKey || !proPriceId || !premiumPriceId) {
+  if (!secretKey || !basicPriceId || !proPriceId) {
     return {
       statusCode: 500,
       body: {
         error:
-          "Stripe env is missing. Set STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_PREMIUM.",
+          "Stripe env is missing. Set STRIPE_SECRET_KEY, STRIPE_PRICE_ID_BASIC, and STRIPE_PRICE_ID_PRO.",
       },
     };
   }
 
   const plan = payload.plan;
-  if (plan !== "PRO" && plan !== "PREMIUM") {
+  if (plan !== "BASIC" && plan !== "PRO") {
     return { statusCode: 400, body: { error: "Invalid plan" } };
   }
 
   try {
     const stripe = new Stripe(secretKey);
-    const priceId = plan === "PRO" ? proPriceId : premiumPriceId;
+    const priceId = plan === "BASIC" ? basicPriceId : proPriceId;
     const requestOrigin = getHeaderValue(headers.origin);
     const requestHost = getHeaderValue(headers.host);
     const appUrl =

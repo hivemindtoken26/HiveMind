@@ -44,9 +44,12 @@ type WatcherAlertItem = {
   note: string;
 };
 
+type PaidPlan = "BASIC" | "PRO";
+type AppPlan = "FREE" | PaidPlan;
+
 type PaidSignal = {
   id: string;
-  tier: "PRO" | "PREMIUM";
+  tier: PaidPlan;
   title: string;
   detail: string;
 };
@@ -57,17 +60,29 @@ const LOCAL_REPORTS_KEY = "hivemind_pending_reports";
 const TIER_DEFINITIONS = {
   FREE: {
     price: "$0",
-    summary: "Basic tokens and basic Watcher messages.",
+    summary: "Starter tokens and basic Watcher messages.",
   },
-  PRO: {
+  BASIC: {
     price: "$9.99/mo",
     summary: "Better insights, more alerts, and faster updates.",
   },
-  PREMIUM: {
+  PRO: {
     price: "$29.99/mo",
     summary: "Early signals, high-risk warnings, and priority feeds.",
   },
 } as const;
+
+function normalizeStoredPlan(plan: string | null | undefined): AppPlan {
+  if (plan === "BASIC") return "BASIC";
+  if (plan === "PRO") return "PRO";
+  return "FREE";
+}
+
+function formatPlanName(plan: AppPlan | PaidPlan) {
+  if (plan === "FREE") return "Free";
+  if (plan === "BASIC") return "Basic";
+  return "Pro";
+}
 
 export function Pulse() {
   const [email, setEmail] = useState("");
@@ -80,7 +95,9 @@ export function Pulse() {
   const [alerts, setAlerts] = useState<GuardianAlertItem[]>([]);
   const [tracked, setTracked] = useState<TrackedTokenItem[]>([]);
   const [watcherAlerts, setWatcherAlerts] = useState<WatcherAlertItem[]>([]);
-  const [plan, setPlan] = useState<"FREE" | "PRO" | "PREMIUM">("FREE");
+  const [plan, setPlan] = useState<AppPlan>(() =>
+    normalizeStoredPlan(localStorage.getItem(PLAN_STORAGE_KEY)),
+  );
   const [paidSignals, setPaidSignals] = useState<PaidSignal[]>([]);
   const [watcherIdle, setWatcherIdle] = useState(getWatcherIdleMessage(Date.now()));
   const [authBusy, setAuthBusy] = useState(false);
@@ -107,13 +124,13 @@ export function Pulse() {
     const generatedSignals: PaidSignal[] = marketFeed.trending.flatMap((token, idx) => [
       {
         id: `${token.id}-entry`,
-        tier: "PRO",
+        tier: "BASIC",
         title: `Entry timing signal: ${token.symbol}`,
         detail: `Momentum ${token.change24hPct.toFixed(2)}% with volume confirmation from DexScreener.`,
       },
       {
         id: `${token.id}-risk`,
-        tier: idx === 0 ? "PREMIUM" : "PRO",
+        tier: idx === 0 ? "PRO" : "BASIC",
         title: `Liquidity stability model: ${token.symbol}`,
         detail: `Watcher confidence ${token.confidence ?? 70}% with liquidity tracking and risk posture.`,
       },
@@ -128,9 +145,9 @@ export function Pulse() {
     setDisplayName(profile?.display_name ?? "");
     setUsername(profile?.username ?? "");
     const persistedPlan = profile?.paid_plan ?? localStorage.getItem(PLAN_STORAGE_KEY) ?? "FREE";
-    if (persistedPlan === "FREE" || persistedPlan === "PRO" || persistedPlan === "PREMIUM") {
-      setPlan(persistedPlan);
-    }
+    const normalizedPlan = normalizeStoredPlan(persistedPlan);
+    setPlan(normalizedPlan);
+    localStorage.setItem(PLAN_STORAGE_KEY, normalizedPlan);
 
     const watchlistRows = await fetchWatchlistTokens(user.id);
     setWatchlist(watchlistRows.map((r) => `${r.name}: ${r.token_symbol}`));
@@ -342,16 +359,16 @@ export function Pulse() {
     }
   }
 
-  async function handlePlanChange(nextPlan: "FREE" | "PRO" | "PREMIUM") {
+  async function handlePlanChange(nextPlan: AppPlan) {
     setPlan(nextPlan);
     localStorage.setItem(PLAN_STORAGE_KEY, nextPlan);
     if (!userId || userId.startsWith("demo-")) {
-      setStatus(`${nextPlan} plan enabled locally. Connect Stripe/Supabase for paid accounts.`);
+      setStatus(`${formatPlanName(nextPlan)} plan enabled locally. Connect Stripe/Supabase for paid accounts.`);
       return;
     }
     try {
       await updatePaidPlan(userId, nextPlan);
-      setStatus(`Plan updated to ${nextPlan}.`);
+      setStatus(`Plan updated to ${formatPlanName(nextPlan)}.`);
     } catch (err) {
       setStatus(
         `Plan saved locally. Supabase sync pending: ${(err as Error).message}`,
@@ -359,16 +376,16 @@ export function Pulse() {
     }
   }
 
-  async function handleUpgradeTrigger(targetPlan: "PRO" | "PREMIUM") {
+  async function handleUpgradeTrigger(targetPlan: PaidPlan) {
     if (checkoutBusy) return;
     try {
       setCheckoutBusy(true);
       if (!email && !userId) {
         await handlePlanChange(targetPlan);
-        setStatus(`Demo ${targetPlan} plan enabled locally. Add Stripe env vars for checkout.`);
+        setStatus(`Demo ${formatPlanName(targetPlan)} plan enabled locally. Add Stripe env vars for checkout.`);
         return;
       }
-      setStatus(`Opening Stripe checkout for ${targetPlan}...`);
+      setStatus(`Opening Stripe checkout for ${formatPlanName(targetPlan)}...`);
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -385,7 +402,7 @@ export function Pulse() {
       if (!response.ok || !data.url) {
         await handlePlanChange(targetPlan);
         throw new Error(
-          `${data.error ?? "Checkout is not configured yet."} Demo ${targetPlan} plan was enabled locally.`,
+          `${data.error ?? "Checkout is not configured yet."} Demo ${formatPlanName(targetPlan)} plan was enabled locally.`,
         );
       }
       window.location.assign(data.url);
@@ -396,7 +413,7 @@ export function Pulse() {
     }
   }
 
-  async function handleTierButtonClick(targetPlan: "FREE" | "PRO" | "PREMIUM") {
+  async function handleTierButtonClick(targetPlan: AppPlan) {
     if (targetPlan === "FREE") {
       await handlePlanChange("FREE");
       return;
@@ -414,8 +431,8 @@ export function Pulse() {
   const dangerAlerts = alerts.filter((alert) => alert.severity?.toUpperCase() === "DANGER");
   const visibleSignals = paidSignals.map((signal) => {
     const isLocked =
-      (signal.tier === "PRO" && plan === "FREE") ||
-      (signal.tier === "PREMIUM" && plan !== "PREMIUM");
+      (signal.tier === "BASIC" && plan === "FREE") ||
+      (signal.tier === "PRO" && plan !== "PRO");
     return { ...signal, isLocked };
   });
   const watcherSignals = useMemo(() => {
@@ -679,17 +696,17 @@ export function Pulse() {
             <p className="pulse-tier-card__price">{TIER_DEFINITIONS.FREE.price}</p>
             <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.FREE.summary}</p>
           </article>
-          <article className="pulse-tier-card pulse-tier-card--pro">
+          <article className="pulse-tier-card pulse-tier-card--basic">
             <p className="pulse-tier-card__badge">Popular</p>
+            <p className="pulse-tier-card__name">Basic</p>
+            <p className="pulse-tier-card__price">{TIER_DEFINITIONS.BASIC.price}</p>
+            <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.BASIC.summary}</p>
+          </article>
+          <article className="pulse-tier-card pulse-tier-card--pro">
+            <p className="pulse-tier-card__badge">Elite</p>
             <p className="pulse-tier-card__name">Pro</p>
             <p className="pulse-tier-card__price">{TIER_DEFINITIONS.PRO.price}</p>
             <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.PRO.summary}</p>
-          </article>
-          <article className="pulse-tier-card pulse-tier-card--premium">
-            <p className="pulse-tier-card__badge">Elite</p>
-            <p className="pulse-tier-card__name">Premium</p>
-            <p className="pulse-tier-card__price">{TIER_DEFINITIONS.PREMIUM.price}</p>
-            <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.PREMIUM.summary}</p>
           </article>
         </div>
         <div className="pulse-actions pulse-actions--tiers">
@@ -702,27 +719,27 @@ export function Pulse() {
           </button>
           <button
             type="button"
+            className={plan === "BASIC" ? "is-active-tier" : "pulse-button--basic"}
+            disabled={checkoutBusy}
+            onClick={() => void handleTierButtonClick("BASIC")}
+          >
+            {plan === "BASIC" ? "Basic active" : "Upgrade to Basic"}
+          </button>
+          <button
+            type="button"
             className={plan === "PRO" ? "is-active-tier" : "pulse-button--pro"}
             disabled={checkoutBusy}
             onClick={() => void handleTierButtonClick("PRO")}
           >
             {plan === "PRO" ? "Pro active" : "Upgrade to Pro"}
           </button>
-          <button
-            type="button"
-            className={plan === "PREMIUM" ? "is-active-tier" : "pulse-button--premium"}
-            disabled={checkoutBusy}
-            onClick={() => void handleTierButtonClick("PREMIUM")}
-          >
-            {plan === "PREMIUM" ? "Premium active" : "Upgrade to Premium"}
-          </button>
         </div>
-        <p className="pulse-card__body">Current plan: {plan}</p>
+        <p className="pulse-card__body">Current plan: {formatPlanName(plan)}</p>
         <button
           type="button"
           className="pulse-checkout"
           disabled={checkoutBusy}
-          onClick={() => handleUpgradeTrigger(plan === "FREE" ? "PRO" : "PREMIUM")}
+          onClick={() => handleUpgradeTrigger(plan === "FREE" ? "BASIC" : "PRO")}
         >
           {checkoutBusy ? "Opening Stripe..." : "Upgrade now with Stripe"}
         </button>
@@ -739,10 +756,10 @@ export function Pulse() {
                     disabled={checkoutBusy}
                     onClick={() => handleUpgradeTrigger(signal.tier)}
                   >
-                    {checkoutBusy ? "Opening..." : `Unlock ${signal.tier}`}
+                    {checkoutBusy ? "Opening..." : `Unlock ${formatPlanName(signal.tier)}`}
                   </button>
                 ) : (
-                  <strong>{signal.tier} unlocked</strong>
+                  <strong>{formatPlanName(signal.tier)} unlocked</strong>
                 )}
               </li>
             ))}

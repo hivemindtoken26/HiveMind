@@ -7,7 +7,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique,
   display_name text,
-  paid_plan text not null default 'FREE' check (paid_plan in ('FREE', 'PRO', 'PREMIUM')),
+  paid_plan text not null default 'FREE' check (paid_plan in ('FREE', 'BASIC', 'PRO')),
   avatar_url text,
   bio text,
   created_at timestamptz not null default now(),
@@ -16,7 +16,7 @@ create table if not exists public.profiles (
 
 alter table public.profiles
   add column if not exists paid_plan text not null default 'FREE'
-  check (paid_plan in ('FREE', 'PRO', 'PREMIUM'));
+  check (paid_plan in ('FREE', 'BASIC', 'PRO'));
 
 create table if not exists public.watchlists (
   id uuid primary key default gen_random_uuid(),

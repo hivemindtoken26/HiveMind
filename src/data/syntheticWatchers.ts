@@ -20,7 +20,7 @@ type WatcherSignals = {
   alertCount: number;
   trackedCount: number;
   reportCount: number;
-  plan: "FREE" | "PRO" | "PREMIUM";
+  plan: "FREE" | "BASIC" | "PRO";
 };
 
 export type NeoDailyReport = {
@@ -90,7 +90,7 @@ function getLevelName(level: number): WatcherLevelName {
 }
 
 function scoreSignals(signals: WatcherSignals) {
-  const planBoost = signals.plan === "PREMIUM" ? 90 : signals.plan === "PRO" ? 45 : 0;
+  const planBoost = signals.plan === "PRO" ? 90 : signals.plan === "BASIC" ? 45 : 0;
   return (
     signals.watchlistCount * 18 +
     signals.alertCount * 24 +

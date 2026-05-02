@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import type { ViteDevServer } from "vite";
 
-type PaidPlan = "PRO" | "PREMIUM";
+type PaidPlan = "BASIC" | "PRO";
 
 type WebhookEnv = {
   STRIPE_SECRET_KEY?: string;
@@ -26,7 +26,7 @@ function getHeaderValue(value: string | string[] | undefined) {
 
 function getCheckoutPlan(session: Stripe.Checkout.Session): PaidPlan | null {
   const plan = session.metadata?.plan;
-  return plan === "PRO" || plan === "PREMIUM" ? plan : null;
+  return plan === "BASIC" || plan === "PRO" ? plan : null;
 }
 
 function getCheckoutUserId(session: Stripe.Checkout.Session) {

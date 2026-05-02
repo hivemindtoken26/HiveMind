@@ -1300,11 +1300,11 @@ a {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 28px rgba(0, 0, 0, 0.34);
 }
 
-.pulse-tier-card--pro {
+.pulse-tier-card--basic {
   border-color: rgba(255, 195, 77, 0.46);
 }
 
-.pulse-tier-card--premium {
+.pulse-tier-card--pro {
   border-color: rgba(94, 231, 255, 0.62);
   background:
     radial-gradient(circle at 8% -20%, rgba(94, 231, 255, 0.24), transparent 55%),
@@ -1372,11 +1372,11 @@ a {
   box-shadow: 0 0 0 1px rgba(186, 255, 130, 0.2), 0 0 24px rgba(120, 255, 75, 0.16);
 }
 
-.pulse-actions--tiers button.pulse-button--pro {
+.pulse-actions--tiers button.pulse-button--basic {
   border-color: rgba(120, 255, 75, 0.55);
 }
 
-.pulse-actions--tiers button.pulse-button--premium {
+.pulse-actions--tiers button.pulse-button--pro {
   border-color: rgba(186, 255, 130, 0.7);
   background:
     linear-gradient(145deg, rgba(186, 255, 130, 0.3), rgba(120, 255, 75, 0.1)),

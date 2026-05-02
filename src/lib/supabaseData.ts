@@ -5,7 +5,7 @@ type AppProfile = {
   id: string;
   username: string | null;
   display_name: string | null;
-  paid_plan?: "FREE" | "PRO" | "PREMIUM" | null;
+  paid_plan?: "FREE" | "BASIC" | "PRO" | null;
 };
 
 export type WatchlistRecord = {
@@ -50,7 +50,7 @@ export async function upsertProfile(userId: string, displayName: string, usernam
   if (error) throw error;
 }
 
-export async function updatePaidPlan(userId: string, paidPlan: "FREE" | "PRO" | "PREMIUM") {
+export async function updatePaidPlan(userId: string, paidPlan: "FREE" | "BASIC" | "PRO") {
   if (!supabase) throw new Error("Supabase env vars are missing.");
   const { error } = await supabase.from("profiles").upsert({
     id: userId,
