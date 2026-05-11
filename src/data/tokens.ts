@@ -9,6 +9,20 @@ import {
 
 export type GuardianRisk = GuardianStatus;
 
+/** User-facing Nexus risk band (internal values remain SAFE | WARNING | DANGER). */
+export function nexusRiskBandLabel(risk: GuardianRisk): string {
+  switch (risk) {
+    case "SAFE":
+      return "Safe";
+    case "WARNING":
+      return "Warning";
+    case "DANGER":
+      return "Danger";
+    default:
+      return String(risk);
+  }
+}
+
 export type Token = {
   id: string;
   symbol: string;

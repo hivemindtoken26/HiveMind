@@ -1,4 +1,4 @@
-export type SentinelRank = "Scout" | "Sentinel" | "Guardian" | "Oracle" | "Hive Core";
+export type SentinelRank = "Scout" | "Sentinel" | "Bulwark" | "Oracle" | "Hive Core";
 
 export type SyntheticSentinel = {
   id: string;
@@ -33,7 +33,7 @@ export type MotherDailyReport = {
   closingNote: string;
 };
 
-const RANKS: SentinelRank[] = ["Scout", "Sentinel", "Guardian", "Oracle", "Hive Core"];
+const RANKS: SentinelRank[] = ["Scout", "Sentinel", "Bulwark", "Oracle", "Hive Core"];
 const XP_PER_LEVEL = 140;
 
 const sentinelSeeds = [

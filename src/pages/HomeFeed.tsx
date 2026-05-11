@@ -179,7 +179,7 @@ export function HomeFeed() {
           <p className="hive-vision__eyebrow">Hivemind Security Grid</p>
           <h2 className="hive-vision__title">Built to be the safest Solana trading command center.</h2>
           <p className="hive-vision__copy">
-            AI risk modeling, crowd intelligence, and real-time Guardian alerts work as one system.
+            AI risk modeling, crowd intelligence, and real-time Nexus signals work as one system.
           </p>
         </div>
         <div className="hive-vision__grid">
@@ -194,7 +194,7 @@ export function HomeFeed() {
             <p className="hive-vision-card__icon">COM</p>
             <p className="hive-vision-card__title">Community Protection</p>
             <p className="hive-vision-card__body">
-              Reports from traders feed into Guardian scoring so risky tokens are flagged faster.
+              Reports from traders feed into Nexus scoring so risky tokens are flagged faster.
             </p>
           </article>
           <article className="hive-vision-card">
@@ -223,9 +223,9 @@ export function HomeFeed() {
 
       <section className="token-section">
         <div className="token-section__head">
-          <h2 className="token-section__title">Guardian Alerts</h2>
+          <h2 className="token-section__title">Nexus risk alerts</h2>
           <p className="token-section__lede">
-            Warning and danger signals that need attention
+            Warning and danger bands that need attention
           </p>
         </div>
         <ul className="token-list">
@@ -241,7 +241,7 @@ export function HomeFeed() {
         <div className="token-section__head">
           <h2 className="token-section__title">Verified / Safer Tokens</h2>
           <p className="token-section__lede">
-            Tokens currently classified as lower risk by Guardian
+            Tokens currently classified in the Nexus Safe band
           </p>
         </div>
         <ul className="token-list">

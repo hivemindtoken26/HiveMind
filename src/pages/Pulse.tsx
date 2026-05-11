@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { nexusRiskBandLabel } from "../data/tokens";
 import {
   addWatchlistToken,
   createWatchlist,
@@ -388,7 +389,7 @@ export function Pulse() {
     setUserId(demoId);
     setUserEmail(null);
     setAuthMessage({ tone: "success", text: "Demo mode is live. Explore freely; sign in to save." });
-    setWatchlist(["Guardian Watchlist: HIVE"]);
+    setWatchlist(["Nexus Watchlist: HIVE"]);
     setTracked([
       {
         token_symbol: "HIVE",
@@ -420,7 +421,7 @@ export function Pulse() {
       return;
     }
     if (!hasSupabaseEnv || userId.startsWith("demo-")) {
-      setWatchlist(["Guardian Watchlist: HIVE"]);
+      setWatchlist(["Nexus Watchlist: HIVE"]);
       setTracked([
         {
           token_symbol: "HIVE",
@@ -441,7 +442,7 @@ export function Pulse() {
       return;
     }
     try {
-      const watchlistId = await createWatchlist(userId, "Guardian Watchlist");
+      const watchlistId = await createWatchlist(userId, "Nexus Watchlist");
       await addWatchlistToken(
         watchlistId,
         "HIVE",
@@ -736,7 +737,7 @@ export function Pulse() {
             {warningCalls.map((token) => (
               <li key={`warning-${token.token_symbol}`}>
                 <span>{token.token_symbol ?? "UNKNOWN"}</span>
-                <strong>Sentinel: WARNING</strong>
+                <strong>Nexus · {nexusRiskBandLabel("WARNING")}</strong>
               </li>
             ))}
           </ul>
@@ -753,7 +754,7 @@ export function Pulse() {
               <li key={`safe-${token.token_symbol}`}>
                 <span>{token.token_symbol ?? "UNKNOWN"}</span>
                 <strong>
-                  Guardian: SAFE
+                  Nexus · {nexusRiskBandLabel(token.guardian_status ?? "SAFE")}
                   {typeof token.guardian_score === "number"
                     ? ` (${token.guardian_score}/100)`
                     : ""}
