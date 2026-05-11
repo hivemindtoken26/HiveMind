@@ -9,10 +9,12 @@ type TokenPatch = {
   liquidityUsd?: number;
   marketCapUsd?: number;
   mintAddress?: string;
+  logoUrl?: string;
 };
 
 type DexPair = {
   baseToken?: { symbol?: string; name?: string; address?: string };
+  info?: { imageUrl?: string };
   priceUsd?: string;
   priceChange?: { h24?: number };
   volume?: { h24?: number };
@@ -59,6 +61,7 @@ function compactPatch(patch: TokenPatch): TokenPatch {
 }
 
 function patchFromDexPair(pair: DexPair): TokenPatch {
+  const imageUrl = pair.info?.imageUrl?.trim();
   return compactPatch({
     priceUsd: toFiniteNumber(pair.priceUsd),
     change24hPct: toFiniteNumber(pair.priceChange?.h24),
@@ -66,6 +69,7 @@ function patchFromDexPair(pair: DexPair): TokenPatch {
     liquidityUsd: toFiniteNumber(pair.liquidity?.usd),
     marketCapUsd: toFiniteNumber(pair.fdv),
     mintAddress: pair.baseToken?.address,
+    logoUrl: imageUrl?.startsWith("http") ? imageUrl : undefined,
   });
 }
 

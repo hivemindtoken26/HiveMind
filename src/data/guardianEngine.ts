@@ -1,4 +1,4 @@
-import { getWatcherMessage } from "../lib/watcherVoice";
+import { getSentinelMessage } from "../lib/watcherVoice";
 
 export type GuardianStatus = "SAFE" | "WARNING" | "DANGER";
 
@@ -289,7 +289,7 @@ export function evaluateGuardianRisk(
     ),
   );
 
-  const guardianMessage = getWatcherMessage(status);
+  const guardianMessage = getSentinelMessage(status);
 
   return {
     status,

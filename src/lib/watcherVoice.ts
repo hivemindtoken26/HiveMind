@@ -1,23 +1,34 @@
-const watcherIdleMessages = [
-  "The Watcher is observing liquidity flow across the hive.",
-  "The Watcher is observing volume spikes in real time.",
-  "The Watcher is observing contract behavior for risk shifts.",
+const sentinelIdleMessages = [
+  "Nexus Sentinels are observing liquidity flow across the hive.",
+  "Nexus Sentinels are tracking volume spikes in real time.",
+  "Nexus Sentinels are monitoring contract behavior for risk shifts.",
 ];
 
-export function getWatcherMessage(status: string): string {
+/** User-facing risk copy for Sentinel / Nexus intelligence. */
+export function getSentinelMessage(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === "safe") {
-    return "The Watcher sees no immediate threat.";
+    return "The Sentinel sees no immediate threat.";
   }
   if (normalized === "warning") {
-    return "The Watcher detected unstable activity.";
+    return "The Sentinel detected unstable activity.";
   }
   if (normalized === "danger") {
-    return "The Watcher advises caution. Multiple risk signals detected.";
+    return "The Sentinel advises caution. Multiple risk signals detected.";
   }
-  return "The Watcher is observing the network...";
+  return "Nexus Sentinels are observing the network...";
 }
 
+export function getSentinelIdleMessage(seed: number): string {
+  return sentinelIdleMessages[Math.abs(seed) % sentinelIdleMessages.length];
+}
+
+/** @deprecated Use getSentinelMessage */
+export function getWatcherMessage(status: string): string {
+  return getSentinelMessage(status);
+}
+
+/** @deprecated Use getSentinelIdleMessage */
 export function getWatcherIdleMessage(seed: number): string {
-  return watcherIdleMessages[Math.abs(seed) % watcherIdleMessages.length];
+  return getSentinelIdleMessage(seed);
 }

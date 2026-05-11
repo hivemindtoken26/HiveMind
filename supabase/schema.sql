@@ -134,9 +134,58 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  meta_raw text;
+  slug_pref text;
+  local_part text;
+  slug_email text;
+  short_id text;
+  uname text;
+  dname text;
+  use_pref boolean := false;
 begin
-  insert into public.profiles (id)
-  values (new.id)
+  short_id := substring(replace(new.id::text, '-', '') from 1 for 8);
+
+  -- Prefer username from signUp options.data (client sends normalized handle).
+  meta_raw := trim(coalesce(new.raw_user_meta_data->>'username', ''));
+  slug_pref := lower(regexp_replace(meta_raw, '[^a-zA-Z0-9_]', '_', 'g'));
+  slug_pref := regexp_replace(slug_pref, '_+', '_', 'g');
+  slug_pref := trim(both '_' from slug_pref);
+  slug_pref := left(slug_pref, 30);
+
+  if length(slug_pref) >= 3 then
+    uname := slug_pref;
+    if exists (select 1 from public.profiles where username = uname) then
+      uname := left(slug_pref, 20) || '_' || short_id;
+    end if;
+    dname := initcap(replace(slug_pref, '_', ' '));
+    use_pref := true;
+  end if;
+
+  if not use_pref then
+    local_part := split_part(coalesce(new.email, ''), '@', 1);
+    if local_part = '' or local_part is null then
+      local_part := 'user';
+    end if;
+
+    slug_email := lower(regexp_replace(local_part, '[^a-zA-Z0-9_]', '_', 'g'));
+    slug_email := regexp_replace(slug_email, '_+', '_', 'g');
+    slug_email := trim(both '_' from slug_email);
+    if slug_email = '' or slug_email is null then
+      slug_email := 'user';
+    end if;
+    slug_email := left(slug_email, 24);
+
+    uname := slug_email || '_' || short_id;
+
+    dname := trim(both from replace(replace(local_part, '.', ' '), '_', ' '));
+    if dname = '' or dname is null then
+      dname := 'HiveMind member';
+    end if;
+  end if;
+
+  insert into public.profiles (id, username, display_name)
+  values (new.id, uname, dname)
   on conflict (id) do nothing;
   return new;
 end;

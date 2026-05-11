@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { TokenLogo } from "../components/TokenLogo";
 import { submitHiveMindReport } from "../lib/reportSubmission";
 import type { Token } from "../data/tokens";
 import {
@@ -132,12 +133,12 @@ export function TokenDetail() {
       details: reportDetails.trim() || undefined,
     });
     setReportBusy(false);
-    if (result.ok) {
-      setReportNote(
-        result.channel === "supabase"
-          ? "Report submitted to HiveMind."
-          : "Saved on this device. Sign in on Pulse to sync.",
-      );
+      if (result.ok) {
+        setReportNote(
+          result.channel === "supabase"
+            ? "Report submitted to HiveMind."
+            : "Report saved on this device.",
+        );
       setReportDetails("");
     } else {
       setReportNote(result.message);
@@ -198,13 +199,18 @@ export function TokenDetail() {
   return (
     <div className="page">
       <section className="detail-header">
-        <p className="detail-header__eyebrow">Token detail</p>
-        <h1 className="detail-header__title">
-          {token.name} ({token.symbol})
-        </h1>
-        <p className="detail-header__contract">
-          Contract: <span>{token.mintAddress ?? "Not available"}</span>
-        </p>
+        <div className="detail-header__brand">
+          <TokenLogo token={token} size="md" />
+          <div className="detail-header__titles">
+            <p className="detail-header__eyebrow">Token detail</p>
+            <h1 className="detail-header__title">
+              {token.name} ({token.symbol})
+            </h1>
+            <p className="detail-header__contract">
+              Contract: <span>{token.mintAddress ?? "Not available"}</span>
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="detail-chart">
@@ -311,12 +317,14 @@ export function TokenDetail() {
           <a href={dexscreenerUrl} target="_blank" rel="noopener noreferrer">
             Sell {token.symbol}
           </a>
-          <Link to={`/hub?intent=stake&symbol=${encodeURIComponent(token.symbol)}`}>Stake {token.symbol}</Link>
+          <button type="button" className="detail-trade-panel__soon" disabled>
+            Coming soon
+          </button>
         </div>
       </section>
 
       <section className="detail-guardian">
-        <h2>Watchers of the Hive</h2>
+        <h2>Sentinels of the Hive</h2>
         <p>{token.guardianMessage}</p>
       </section>
 

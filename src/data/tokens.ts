@@ -18,6 +18,7 @@ export type Token = {
   guardianRisk: GuardianRisk;
   guardianMessage: string;
   mintAddress?: string;
+  logoUrl?: string;
   volume24hUsd?: number;
   liquidityUsd?: number;
   marketCapUsd?: number;

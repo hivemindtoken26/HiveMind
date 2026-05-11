@@ -11,8 +11,8 @@ type State = {
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { errorMessage: null };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { errorMessage: error.message || "The app hit an unexpected error." };
+  static getDerivedStateFromError(): State {
+    return { errorMessage: "generic" };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -25,9 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <main className="app-main">
           <div className="page">
             <div className="feed-status feed-status--error">
-              HiveMind could not finish loading. Please refresh the page.
-              <br />
-              <span>{this.state.errorMessage}</span>
+              Something went wrong while loading this screen. Please refresh the page and try again.
             </div>
           </div>
         </main>

@@ -1,29 +1,29 @@
-export type WatcherLevelName = "Scout" | "Sentinel" | "Guardian" | "Oracle" | "Hive Core";
+export type SentinelRank = "Scout" | "Sentinel" | "Guardian" | "Oracle" | "Hive Core";
 
-export type SyntheticWatcher = {
+export type SyntheticSentinel = {
   id: string;
   name: string;
   role: string;
   level: number;
-  levelName: WatcherLevelName;
+  levelName: SentinelRank;
   xp: number;
   nextLevelXp: number;
   confidence: number;
   status: string;
   lesson: string;
   accent: "green" | "gold" | "danger";
-  isNeo?: boolean;
+  isMother?: boolean;
 };
 
-type WatcherSignals = {
+type SentinelSignals = {
   watchlistCount: number;
   alertCount: number;
   trackedCount: number;
   reportCount: number;
-  plan: "FREE" | "BASIC" | "PRO";
+  plan: "FREE" | "PRO";
 };
 
-export type NeoDailyReport = {
+export type MotherDailyReport = {
   mood: "Calm" | "Alert" | "High Guard";
   systemHealth: number;
   oversightGrade: "A" | "B" | "C";
@@ -33,19 +33,19 @@ export type NeoDailyReport = {
   closingNote: string;
 };
 
-const LEVELS: WatcherLevelName[] = ["Scout", "Sentinel", "Guardian", "Oracle", "Hive Core"];
+const RANKS: SentinelRank[] = ["Scout", "Sentinel", "Guardian", "Oracle", "Hive Core"];
 const XP_PER_LEVEL = 140;
 
-const watcherSeeds = [
+const sentinelSeeds = [
   {
-    id: "neo",
-    name: "NEO",
-    role: "Overseer of the Watchers",
+    id: "mother",
+    name: "Mother",
+    role: "Overseer of the Nexus Sentinels",
     baseXp: 180,
-    status: "Auditing every Watcher for accuracy, drift, and missed alerts.",
-    lesson: "NEO learns from the whole hive and reports the day back to you.",
+    status: "Auditing every Sentinel for accuracy, drift, and missed alerts.",
+    lesson: "Mother learns from the whole hive and reports the day back to you.",
     accent: "gold" as const,
-    isNeo: true,
+    isMother: true,
   },
   {
     id: "morpheus",
@@ -57,8 +57,8 @@ const watcherSeeds = [
     accent: "green" as const,
   },
   {
-    id: "sentinel",
-    name: "Sentinel",
+    id: "warden",
+    name: "Warden",
     role: "Liquidity and wallet guard",
     baseXp: 78,
     status: "Watching liquidity depth, whale concentration, and fast exits.",
@@ -84,8 +84,8 @@ const watcherSeeds = [
     accent: "gold" as const,
   },
   {
-    id: "whale-watcher",
-    name: "Whale Watcher",
+    id: "whale-sentinel",
+    name: "Whale Sentinel",
     role: "Large wallet, big buy, and big sell tracker",
     baseXp: 92,
     status: "Tracking large wallets, big buys, big sells, whale concentration, and fast exits.",
@@ -94,12 +94,12 @@ const watcherSeeds = [
   },
 ];
 
-function getLevelName(level: number): WatcherLevelName {
-  return LEVELS[Math.min(level - 1, LEVELS.length - 1)];
+function getRankForLevel(level: number): SentinelRank {
+  return RANKS[Math.min(level - 1, RANKS.length - 1)];
 }
 
-function scoreSignals(signals: WatcherSignals) {
-  const planBoost = signals.plan === "PRO" ? 90 : signals.plan === "BASIC" ? 45 : 0;
+function scoreSignals(signals: SentinelSignals) {
+  const planBoost = signals.plan === "PRO" ? 90 : 0;
   return (
     signals.watchlistCount * 18 +
     signals.alertCount * 24 +
@@ -109,19 +109,19 @@ function scoreSignals(signals: WatcherSignals) {
   );
 }
 
-export function buildSyntheticWatchers(signals: WatcherSignals): SyntheticWatcher[] {
+export function buildSyntheticSentinels(signals: SentinelSignals): SyntheticSentinel[] {
   const signalXp = scoreSignals(signals);
 
-  return watcherSeeds.map((watcher, index) => {
-    const xp = watcher.baseXp + signalXp + index * 17;
+  return sentinelSeeds.map((sentinel, index) => {
+    const xp = sentinel.baseXp + signalXp + index * 17;
     const level = Math.min(5, Math.max(1, Math.floor(xp / XP_PER_LEVEL) + 1));
     const nextLevelXp = level >= 5 ? xp : level * XP_PER_LEVEL;
     const confidence = Math.min(97, 54 + level * 7 + signals.alertCount * 2 + signals.reportCount);
 
     return {
-      ...watcher,
+      ...sentinel,
       level,
-      levelName: getLevelName(level),
+      levelName: getRankForLevel(level),
       xp,
       nextLevelXp,
       confidence,
@@ -129,22 +129,22 @@ export function buildSyntheticWatchers(signals: WatcherSignals): SyntheticWatche
   });
 }
 
-export function buildNeoBriefing(watchers: SyntheticWatcher[], signals: WatcherSignals): string {
-  const neo = watchers.find((watcher) => watcher.isNeo);
+export function buildMotherBriefing(sentinels: SyntheticSentinel[], signals: SentinelSignals): string {
+  const mother = sentinels.find((s) => s.isMother);
   const activeAlerts = signals.alertCount;
   const watchedTokens = signals.watchlistCount + signals.trackedCount;
-  const topLevel = Math.max(...watchers.map((watcher) => watcher.level));
+  const topLevel = Math.max(...sentinels.map((s) => s.level));
 
-  return `NEO report: ${activeAlerts} alert signal${activeAlerts === 1 ? "" : "s"} reviewed, ${watchedTokens} watched asset${watchedTokens === 1 ? "" : "s"} monitored, top Watcher level ${topLevel}. ${neo?.confidence ?? 70}% oversight confidence.`;
+  return `Mother report: ${activeAlerts} alert signal${activeAlerts === 1 ? "" : "s"} reviewed, ${watchedTokens} watched asset${watchedTokens === 1 ? "" : "s"} monitored, top Sentinel rank ${topLevel}. ${mother?.confidence ?? 70}% oversight confidence.`;
 }
 
-export function buildNeoDailyReport(
-  watchers: SyntheticWatcher[],
-  signals: WatcherSignals,
-): NeoDailyReport {
-  const neo = watchers.find((watcher) => watcher.isNeo);
+export function buildMotherDailyReport(
+  sentinels: SyntheticSentinel[],
+  signals: SentinelSignals,
+): MotherDailyReport {
+  const mother = sentinels.find((s) => s.isMother);
   const averageConfidence = Math.round(
-    watchers.reduce((total, watcher) => total + watcher.confidence, 0) / watchers.length,
+    sentinels.reduce((total, s) => total + s.confidence, 0) / sentinels.length,
   );
   const activeAlerts = signals.alertCount;
   const watchedAssets = signals.watchlistCount + signals.trackedCount;
@@ -152,35 +152,35 @@ export function buildNeoDailyReport(
     activeAlerts >= 4 ? "High Guard" : activeAlerts >= 1 || signals.reportCount >= 2 ? "Alert" : "Calm";
   const systemHealth = Math.min(99, Math.max(55, averageConfidence + signals.trackedCount * 2));
   const oversightGrade = systemHealth >= 86 ? "A" : systemHealth >= 72 ? "B" : "C";
-  const topWatcher = watchers
-    .filter((watcher) => !watcher.isNeo)
+  const topSentinel = sentinels
+    .filter((s) => !s.isMother)
     .sort((a, b) => b.level - a.level || b.confidence - a.confidence)[0];
 
   return {
     mood,
     systemHealth,
     oversightGrade,
-    headline: `${neo?.name ?? "NEO"} is online. Watcher discipline is ${oversightGrade}-grade.`,
+    headline: `${mother?.name ?? "Mother"} is online. Sentinel discipline is ${oversightGrade}-grade.`,
     daySummary:
       watchedAssets > 0
         ? `${watchedAssets} watched asset${watchedAssets === 1 ? "" : "s"} tracked, ${activeAlerts} alert stream${activeAlerts === 1 ? "" : "s"} reviewed, and ${signals.reportCount} hive report${signals.reportCount === 1 ? "" : "s"} folded into memory.`
-        : "No watched assets yet. NEO is standing by in demo mode and waiting for the hive to feed it reports.",
+        : "No watched assets yet. Mother is standing by in demo mode and waiting for the hive to feed Nexus reports.",
     priorities: [
       activeAlerts > 0
         ? "Review active alerts and confirm whether each warning was useful."
-        : "Add tokens to the watchlist so the Watchers can start building memory.",
+        : "Add tokens to your watchlist so Nexus Sentinels can start building memory.",
       signals.reportCount > 0
-        ? "Keep collecting community reports so Whale Watcher can strengthen scam-pattern memory."
-        : "Use report buttons on suspicious tokens to train Whale Watcher and NEO.",
-      topWatcher
-        ? `${topWatcher.name} is leading today at level ${topWatcher.level}. Feed it more signals to push toward ${topWatcher.levelName}.`
-        : "Launch demo mode to wake the Watchers and generate a training baseline.",
+        ? "Keep collecting community reports so Whale Sentinel can strengthen scam-pattern memory."
+        : "Use report buttons on suspicious tokens to train Whale Sentinel and Mother.",
+      topSentinel
+        ? `${topSentinel.name} is leading today at level ${topSentinel.level}. Feed it more signals to push toward ${topSentinel.levelName}.`
+        : "Launch demo mode to wake the Sentinels and generate a training baseline.",
     ],
     closingNote:
       mood === "High Guard"
-        ? "NEO recommends staying defensive today. The hive is seeing enough activity to keep shields hot."
+        ? "Mother recommends staying defensive today. The hive is seeing enough activity to keep shields hot."
         : mood === "Alert"
-          ? "NEO sees movement worth watching. Keep the Watchers fed and verify anything suspicious."
-          : "NEO reports a calm grid. Good day to train the hive and prepare stronger alerts.",
+          ? "Mother sees movement worth watching. Keep the Sentinels fed and verify anything suspicious."
+          : "Mother reports a calm grid. Good day to train the hive and prepare stronger alerts.",
   };
 }

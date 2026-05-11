@@ -47,7 +47,7 @@ function throwIfStructuralDbFailure(err: unknown): never {
 
   if (!plainAuth && structural) {
     throw new Error(
-      "Supabase is missing HiveMind tables or a database object (often guardian_alerts, profiles, or a trigger target). Run supabase/hivemind-complete-schema.sql in the Supabase SQL Editor for this project, then try again.",
+      "We could not complete sign-in right now. Please try again in a few minutes or contact support if this continues.",
     );
   }
 
@@ -68,9 +68,19 @@ export type WatchlistRecord = {
   token_name: string;
 };
 
-export async function signUpWithEmail(email: string, password: string) {
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  normalizedUsername?: string,
+) {
   if (!supabase) throw new Error("Supabase env vars are missing.");
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    ...(normalizedUsername
+      ? { options: { data: { username: normalizedUsername } } }
+      : {}),
+  });
   if (error) throwIfStructuralDbFailure(error);
   return data;
 }
@@ -100,6 +110,84 @@ export async function getCurrentUser(): Promise<User | null> {
   const { data, error } = await supabase.auth.getSession();
   if (error) return null;
   return data.session?.user ?? null;
+}
+
+/** Letters, numbers, underscores; max length 30 (matches signup validation). */
+export function normalizeSignupUsername(raw: string): string {
+  const s = raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  return s.slice(0, 30);
+}
+
+function displayNameFromUsernameSlug(slug: string): string {
+  const words = slug.split("_").filter(Boolean);
+  if (!words.length) return "HiveMind member";
+  return words
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function isPostgresUniqueViolation(err: unknown): boolean {
+  if (err && typeof err === "object" && "code" in err) {
+    return (err as { code?: string }).code === "23505";
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  return /duplicate key|unique constraint/i.test(msg);
+}
+
+/** Email-based fallback when no chosen username (e.g. old clients); matches SQL fallback. */
+export function buildFallbackProfileFields(
+  email: string,
+  userId: string,
+): { username: string; displayName: string } {
+  const at = email.indexOf("@");
+  const local = (at >= 0 ? email.slice(0, at) : email).trim() || "user";
+  const shortId = userId.replace(/-/g, "").slice(0, 8);
+  let slug = local
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  if (!slug) slug = "user";
+  slug = slug.slice(0, 24);
+  const username = `${slug}_${shortId}`;
+  const displayName =
+    local.replace(/\./g, " ").replace(/_/g, " ").trim() || "HiveMind member";
+  return { username, displayName };
+}
+
+/**
+ * Saves chosen signup username to profiles. Retries with a short id suffix if `username` is taken.
+ */
+export async function upsertSignupProfile(
+  userId: string,
+  email: string,
+  chosenUsernameRaw: string,
+): Promise<{ username: string; displayName: string }> {
+  const normalized = normalizeSignupUsername(chosenUsernameRaw);
+  if (normalized.length < 3) {
+    const fb = buildFallbackProfileFields(email, userId);
+    await upsertProfile(userId, fb.displayName, fb.username);
+    return fb;
+  }
+
+  const shortId = userId.replace(/-/g, "").slice(0, 8);
+  const displayPreferred = displayNameFromUsernameSlug(normalized);
+
+  try {
+    await upsertProfile(userId, displayPreferred, normalized);
+    return { username: normalized, displayName: displayPreferred };
+  } catch (err) {
+    if (!isPostgresUniqueViolation(err)) throw err;
+    const suffixed = `${normalized.slice(0, Math.min(20, normalized.length))}_${shortId}`;
+    const displaySuffixed = displayNameFromUsernameSlug(suffixed);
+    await upsertProfile(userId, displaySuffixed, suffixed);
+    return { username: suffixed, displayName: displaySuffixed };
+  }
 }
 
 export async function upsertProfile(userId: string, displayName: string, username: string) {

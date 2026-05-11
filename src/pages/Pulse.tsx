@@ -13,16 +13,16 @@ import {
   signUpWithEmail,
   submitTokenReport,
   updatePaidPlan,
-  upsertProfile,
+  upsertSignupProfile,
   upsertTrackedToken,
 } from "../lib/supabaseData";
 import {
-  buildNeoBriefing,
-  buildNeoDailyReport,
-  buildSyntheticWatchers,
+  buildMotherBriefing,
+  buildMotherDailyReport,
+  buildSyntheticSentinels,
 } from "../data/syntheticWatchers";
 import { hasSupabaseEnv } from "../lib/supabaseClient";
-import { getWatcherIdleMessage, getWatcherMessage } from "../lib/watcherVoice";
+import { getSentinelIdleMessage, getSentinelMessage } from "../lib/watcherVoice";
 import { fetchMvpTokenFeed } from "../services/marketDataService";
 
 type GuardianAlertItem = {
@@ -39,18 +39,16 @@ type TrackedTokenItem = {
   guardian_score?: number | null;
 };
 
-type WatcherAlertItem = {
+type SentinelAlertItem = {
   tokenSymbol: string;
   severity: "WARNING" | "DANGER";
   note: string;
 };
 
-type PaidPlan = "BASIC" | "PRO";
-type AppPlan = "FREE" | PaidPlan;
+type AppPlan = "FREE" | "PRO";
 
 type PaidSignal = {
   id: string;
-  tier: PaidPlan;
   title: string;
   detail: string;
 };
@@ -63,93 +61,88 @@ type AuthMessage = {
 const PLAN_STORAGE_KEY = "hivemind_paid_plan";
 const DEMO_SESSION_KEY = "hivemind_demo_session";
 const LOCAL_REPORTS_KEY = "hivemind_pending_reports";
-const TIER_DEFINITIONS = {
-  FREE: {
-    price: "$0",
-    summary: "Starter tokens and basic Watcher messages.",
-  },
-  BASIC: {
-    price: "$9.99/mo",
-    summary: "Better insights, more alerts, and faster updates.",
-  },
-  PRO: {
-    price: "$29.99/mo",
-    summary: "Early signals, high-risk warnings, and priority feeds.",
-  },
-} as const;
 
 function normalizeStoredPlan(plan: string | null | undefined): AppPlan {
-  if (plan === "BASIC") return "BASIC";
   if (plan === "PRO") return "PRO";
   return "FREE";
 }
 
-function formatPlanName(plan: AppPlan | PaidPlan) {
-  if (plan === "FREE") return "Free";
-  if (plan === "BASIC") return "Basic";
-  return "Pro";
+function formatPlanName(plan: AppPlan) {
+  if (plan === "PRO") return "Nexus Pro";
+  return "Free";
 }
 
 function describeAuthError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
   const lower = msg.toLowerCase();
-  if (
-    lower.includes("missing hivemind tables") ||
-    lower.includes("missing required tables") ||
-    lower.includes("hivemind-complete-schema")
-  ) {
-    return msg;
-  }
   if (lower.includes("invalid login credentials") || lower.includes("invalid_grant")) {
     return "Wrong email or password.";
   }
   if (lower.includes("email not confirmed")) {
-    return "Confirm your email (link from Supabase) before signing in.";
+    return "Confirm your email before signing in.";
   }
   if (lower.includes("too many requests") || lower.includes("rate")) {
     return "Too many attempts. Wait a minute and try again.";
+  }
+  if (lower.includes("user already registered")) {
+    return "An account with this email already exists. Try signing in instead.";
   }
   if (
     lower.includes("does not exist") ||
     lower.includes("schema cache") ||
     lower.includes("could not find the table") ||
-    lower.includes("pgrst205")
+    lower.includes("pgrst205") ||
+    lower.includes("hivemind") ||
+    lower.includes("undefined_table") ||
+    lower.includes("42p01")
   ) {
-    return `${msg} If you are the project owner: run supabase/hivemind-complete-schema.sql in the Supabase SQL Editor, or remove broken auth triggers that reference missing tables.`;
+    return "We could not reach your account right now. Please try again in a moment.";
   }
-  return msg;
+  return "Something went wrong. Please try again.";
+}
+
+function friendlyActionError(): string {
+  return "We could not complete that action. Please try again shortly.";
 }
 
 export function Pulse() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [username, setUsername] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [status, setStatus] = useState("Waiting for connection.");
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [alerts, setAlerts] = useState<GuardianAlertItem[]>([]);
   const [tracked, setTracked] = useState<TrackedTokenItem[]>([]);
-  const [watcherAlerts, setWatcherAlerts] = useState<WatcherAlertItem[]>([]);
+  const [sentinelAlerts, setSentinelAlerts] = useState<SentinelAlertItem[]>([]);
   const [plan, setPlan] = useState<AppPlan>(() =>
     normalizeStoredPlan(localStorage.getItem(PLAN_STORAGE_KEY)),
   );
   const [paidSignals, setPaidSignals] = useState<PaidSignal[]>([]);
-  const [watcherIdle, setWatcherIdle] = useState(getWatcherIdleMessage(Date.now()));
+  const [sentinelIdle, setSentinelIdle] = useState(getSentinelIdleMessage(Date.now()));
   const [authBusy, setAuthBusy] = useState(false);
+  const [authLoadPhrase, setAuthLoadPhrase] = useState<"nexus" | "mother">("nexus");
   const [authMessage, setAuthMessage] = useState<AuthMessage>({
     tone: "info",
     text: hasSupabaseEnv
       ? "Supabase auth is ready."
-      : "Supabase keys are missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable real sign up and sign in.",
+      : "Add Supabase keys to enable saving watchlists and alerts to your account.",
   });
   const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [neoReportStamp, setNeoReportStamp] = useState(() => Date.now());
+  const [motherReportStamp, setMotherReportStamp] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!authBusy) return;
+    setAuthLoadPhrase("nexus");
+    const id = window.setInterval(() => {
+      setAuthLoadPhrase((p) => (p === "nexus" ? "mother" : "nexus"));
+    }, 1400);
+    return () => window.clearInterval(id);
+  }, [authBusy]);
 
   async function refreshMarketSignals() {
     const marketFeed = await fetchMvpTokenFeed();
-    const marketAlerts: WatcherAlertItem[] = marketFeed.all
+    const nextSentinelAlerts: SentinelAlertItem[] = marketFeed.all
       .filter(
         (token) =>
           token.guardianRisk !== "SAFE" ||
@@ -160,22 +153,20 @@ export function Pulse() {
       .map((token) => ({
         tokenSymbol: token.symbol,
         severity: token.guardianRisk === "DANGER" ? "DANGER" : "WARNING",
-        note: getWatcherMessage(token.guardianRisk.toLowerCase()),
+        note: getSentinelMessage(token.guardianRisk.toLowerCase()),
       }));
-    setWatcherAlerts(marketAlerts);
+    setSentinelAlerts(nextSentinelAlerts);
 
     const generatedSignals: PaidSignal[] = marketFeed.trending.flatMap((token, idx) => [
       {
-        id: `${token.id}-entry`,
-        tier: "BASIC",
+        id: `${token.id}-entry-${idx}`,
         title: `Entry timing signal: ${token.symbol}`,
         detail: `Momentum ${token.change24hPct.toFixed(2)}% with volume confirmation from DexScreener.`,
       },
       {
-        id: `${token.id}-risk`,
-        tier: idx === 0 ? "PRO" : "BASIC",
+        id: `${token.id}-risk-${idx}`,
         title: `Liquidity stability model: ${token.symbol}`,
-        detail: `Watcher confidence ${token.confidence ?? 70}% with liquidity tracking and risk posture.`,
+        detail: `Sentinel confidence ${token.confidence ?? 70}% with liquidity tracking and risk posture.`,
       },
     ]);
     setPaidSignals(generatedSignals.slice(0, 6));
@@ -189,7 +180,6 @@ export function Pulse() {
         /* Market feed optional */
       }
 
-      /** Prefer caller hint right after password auth */
       let user: User | null = sessionHint ?? null;
       if (!user) {
         try {
@@ -213,12 +203,12 @@ export function Pulse() {
 
       if (!user) return;
 
-      /** Non-blocking for auth: rows may be empty or tables missing — never throw outward */
       const profile = await fetchProfile(user.id);
-      setDisplayName(profile?.display_name ?? "");
-      setUsername(profile?.username ?? "");
-      const persistedPlan = profile?.paid_plan ?? localStorage.getItem(PLAN_STORAGE_KEY) ?? "FREE";
-      const normalizedPlan = normalizeStoredPlan(persistedPlan);
+      const rawPlan =
+        profile?.paid_plan === "BASIC"
+          ? "FREE"
+          : (profile?.paid_plan ?? localStorage.getItem(PLAN_STORAGE_KEY) ?? "FREE");
+      const normalizedPlan = normalizeStoredPlan(rawPlan);
       setPlan(normalizedPlan);
       localStorage.setItem(PLAN_STORAGE_KEY, normalizedPlan);
 
@@ -231,7 +221,7 @@ export function Pulse() {
       const trackedRows = await fetchTrackedTokens();
       setTracked(trackedRows);
     } catch {
-      /* Belt-and-suspenders: hydration must never invalidate a successful auth */
+      /* hydration must never invalidate a successful auth */
     }
   }
 
@@ -240,9 +230,9 @@ export function Pulse() {
     if (demoSession) {
       setUserId(demoSession);
       setUserEmail(null);
-      setStatus("Demo session active. Connect Supabase for real accounts.");
+      setStatus("Demo session active. Sign in to save watchlists and alerts.");
     }
-    setWatcherIdle(getWatcherIdleMessage(Date.now()));
+    setSentinelIdle(getSentinelIdleMessage(Date.now()));
     if (!hasSupabaseEnv) return;
     void loadData();
   }, []);
@@ -258,7 +248,7 @@ export function Pulse() {
       return;
     }
 
-    if (checkoutStatus !== "success" || checkoutPlan === "FREE") return;
+    if (checkoutStatus !== "success" || checkoutPlan !== "PRO") return;
 
     if (!hasSupabaseEnv) {
       setStatus("Checkout succeeded, but Supabase is not configured to remember the subscription.");
@@ -271,19 +261,19 @@ export function Pulse() {
     }
 
     if (userId.startsWith("demo-")) {
-      setStatus("Checkout succeeded, but demo users cannot save subscriptions.");
+      setStatus("Checkout succeeded. Sign in with a real account to link Nexus Pro.");
       return;
     }
 
-    updatePaidPlan(userId, checkoutPlan)
+    updatePaidPlan(userId, "PRO")
       .then(() => {
-        setPlan(checkoutPlan);
-        localStorage.setItem(PLAN_STORAGE_KEY, checkoutPlan);
-        setStatus(`${formatPlanName(checkoutPlan)} subscription saved to your HiveMind profile.`);
+        setPlan("PRO");
+        localStorage.setItem(PLAN_STORAGE_KEY, "PRO");
+        setStatus(`${formatPlanName("PRO")} saved to your HiveMind profile.`);
         window.history.replaceState(null, "", window.location.pathname);
       })
-      .catch((err: Error) => {
-        setStatus(`Checkout succeeded, but saving subscription failed: ${err.message}`);
+      .catch(() => {
+        setStatus("Checkout succeeded, but we could not update your plan. Please contact support.");
       });
   }, [userId]);
 
@@ -296,15 +286,15 @@ export function Pulse() {
     }
     try {
       setAuthBusy(true);
-      setAuthMessage({ tone: "info", text: "Sending sign-up request to Supabase..." });
+      setAuthMessage({ tone: "info", text: "Connecting to Nexus..." });
       if (!hasSupabaseEnv) {
         const demoId = `demo-${Date.now()}`;
         localStorage.setItem(DEMO_SESSION_KEY, demoId);
         setUserId(demoId);
         setUserEmail(null);
         const message =
-          "Demo account started locally. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for real sign up.";
-        setAuthMessage({ tone: "error", text: message });
+          "Demo session started. Add Supabase keys on the server to create a real account.";
+        setAuthMessage({ tone: "success", text: message });
         setStatus(message);
         return;
       }
@@ -313,9 +303,17 @@ export function Pulse() {
       const signupUser = result.session?.user ?? result.user ?? null;
       setUserId(signupUser?.id ?? null);
       setUserEmail(signupUser?.email ?? email);
+      const signupEmail = signupUser?.email ?? email;
+      if (result.session && signupUser && signupEmail) {
+        try {
+          await upsertSignupProfile(signupUser.id, signupEmail, "");
+        } catch {
+          /* profile row may already exist */
+        }
+      }
       const message = result.session
-        ? "Sign up successful. You are signed in with Supabase."
-        : "Sign-up request sent through Supabase. Check your inbox for confirmation.";
+        ? "Welcome to the Nexus. You are signed in."
+        : "Check your inbox to confirm your email, then sign in.";
       setAuthMessage({ tone: "success", text: message });
       setStatus(message);
       if (result.session && signupUser) {
@@ -327,7 +325,7 @@ export function Pulse() {
       const friendlyMessage =
         (err as Error).message?.toLowerCase().includes("rate")
           ? "Too many sign-up attempts. Please wait a minute before trying again."
-          : `Sign up failed: ${describeAuthError(err)}`;
+          : describeAuthError(err);
       setAuthMessage({ tone: "error", text: friendlyMessage });
       setStatus(friendlyMessage);
     } finally {
@@ -344,15 +342,15 @@ export function Pulse() {
     }
     try {
       setAuthBusy(true);
-      setAuthMessage({ tone: "info", text: "Signing in with Supabase..." });
+      setAuthMessage({ tone: "info", text: "Connecting to Nexus..." });
       if (!hasSupabaseEnv) {
         const demoId = localStorage.getItem(DEMO_SESSION_KEY) ?? `demo-${Date.now()}`;
         localStorage.setItem(DEMO_SESSION_KEY, demoId);
         setUserId(demoId);
         setUserEmail(null);
         const message =
-          "Signed in locally for demo mode. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for real auth.";
-        setAuthMessage({ tone: "error", text: message });
+          "Demo session active. Add Supabase keys to sign in with email and password.";
+        setAuthMessage({ tone: "success", text: message });
         setStatus(message);
         return;
       }
@@ -362,22 +360,21 @@ export function Pulse() {
       if (!signedIn) {
         setAuthMessage({
           tone: "error",
-          text: "Sign in failed: Supabase returned no user. Try email confirmation first, or reset password.",
+          text: "Sign-in did not finish. Confirm your email or reset your password.",
         });
-        setStatus("Sign in failed: no Supabase session. Confirm your email or check project settings.");
+        setStatus("Sign-in incomplete. Check your email for a confirmation link.");
         return;
       }
       setUserId(signedIn.id);
       setUserEmail(signedIn.email ?? email);
       const message = signedIn.email
-        ? `Signed in with Supabase as ${signedIn.email}.`
-        : "Signed in with Supabase.";
+        ? `Synchronized as ${signedIn.email}.`
+        : "Synchronized with Nexus.";
       setAuthMessage({ tone: "success", text: message });
       setStatus(message);
       void loadData(signedIn);
     } catch (err) {
-      const detail = describeAuthError(err);
-      const message = `Sign in failed: ${detail}`;
+      const message = describeAuthError(err);
       setAuthMessage({ tone: "error", text: message });
       setStatus(message);
     } finally {
@@ -390,9 +387,7 @@ export function Pulse() {
     localStorage.setItem(DEMO_SESSION_KEY, demoId);
     setUserId(demoId);
     setUserEmail(null);
-    setAuthMessage({ tone: "success", text: "Demo mode launched locally." });
-    setDisplayName(displayName || "HiveMind Demo");
-    setUsername(username || "demo_watcher");
+    setAuthMessage({ tone: "success", text: "Demo mode is live. Explore freely; sign in to save." });
     setWatchlist(["Guardian Watchlist: HIVE"]);
     setTracked([
       {
@@ -416,29 +411,12 @@ export function Pulse() {
         message: "Suspicious liquidity movement.",
       },
     ]);
-    setStatus("Demo mode launched. Buttons are active locally while live services are configured.");
-  }
-
-  async function handleProfileSave() {
-    if (!userId) {
-      setStatus("Sign in before saving your profile.");
-      return;
-    }
-    if (!hasSupabaseEnv || userId.startsWith("demo-")) {
-      setStatus("Profile saved locally for demo mode.");
-      return;
-    }
-    try {
-      await upsertProfile(userId, displayName, username);
-      setStatus("Profile saved.");
-    } catch (err) {
-      setStatus((err as Error).message);
-    }
+    setStatus("Demo mode: sample intelligence loaded. Sign in to persist watchlists and alerts.");
   }
 
   async function handleSeedData() {
     if (!userId) {
-      setStatus("Sign in before writing watchlist or report data.");
+      setStatus("Sign in to save a watchlist, reports, and tracked tokens.");
       return;
     }
     if (!hasSupabaseEnv || userId.startsWith("demo-")) {
@@ -459,7 +437,7 @@ export function Pulse() {
           message: "Suspicious liquidity movement.",
         },
       ]);
-      setStatus("Demo watchlist, report, and tracked token data added locally.");
+      setStatus("Sample watchlist and alerts shown in demo. Sign in with Supabase to save.");
       return;
     }
     try {
@@ -490,8 +468,8 @@ export function Pulse() {
       });
       setStatus("Watchlist, report, and tracked token records written.");
       await loadData();
-    } catch (err) {
-      setStatus((err as Error).message);
+    } catch {
+      setStatus(friendlyActionError());
     }
   }
 
@@ -520,46 +498,28 @@ export function Pulse() {
       setWatchlist([]);
       setAlerts([]);
       setTracked([]);
-      setAuthMessage({ tone: "success", text: "Signed out of Supabase." });
-      setStatus("Signed out of Supabase.");
-    } catch (err) {
-      const message = `Sign out failed: ${(err as Error).message}`;
-      setAuthMessage({ tone: "error", text: message });
-      setStatus(message);
+      setAuthMessage({ tone: "success", text: "Signed out." });
+      setStatus("Signed out.");
+    } catch {
+      setAuthMessage({ tone: "error", text: "We could not sign you out. Please try again." });
+      setStatus(friendlyActionError());
     }
   }
 
-  async function handlePlanChange(nextPlan: AppPlan) {
-    setPlan(nextPlan);
-    localStorage.setItem(PLAN_STORAGE_KEY, nextPlan);
-    if (!userId || userId.startsWith("demo-")) {
-      setStatus(`${formatPlanName(nextPlan)} plan enabled locally. Connect Stripe/Supabase for paid accounts.`);
-      return;
-    }
-    try {
-      await updatePaidPlan(userId, nextPlan);
-      setStatus(`Plan updated to ${formatPlanName(nextPlan)}.`);
-    } catch (err) {
-      setStatus(
-        `Plan saved locally. Supabase sync pending: ${(err as Error).message}`,
-      );
-    }
-  }
-
-  async function handleUpgradeTrigger(targetPlan: PaidPlan) {
+  async function handleUpgradeTrigger() {
     if (checkoutBusy) return;
     if (!hasSupabaseEnv || !userId || userId.startsWith("demo-")) {
-      setStatus("Sign in with Supabase before upgrading so your subscription can be remembered.");
+      setStatus("Sign in with Supabase before upgrading so Nexus Pro links to your account.");
       return;
     }
     try {
       setCheckoutBusy(true);
-      setStatus(`Opening Stripe checkout for ${formatPlanName(targetPlan)}...`);
+      setStatus("Opening secure checkout…");
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plan: targetPlan,
+          plan: "PRO",
           userId,
           email: userEmail ?? (email || undefined),
         }),
@@ -569,39 +529,30 @@ export function Pulse() {
         error?: string;
       };
       if (!response.ok || !data.url) {
-        throw new Error(data.error ?? "Checkout is not configured yet.");
+        throw new Error(data.error ?? "unavailable");
       }
       window.location.href = data.url;
-    } catch (err) {
-      setStatus(`Upgrade failed: ${(err as Error).message}`);
+    } catch {
+      setStatus("Checkout is not available right now. Please try again later.");
     } finally {
       setCheckoutBusy(false);
     }
   }
 
-  async function handleTierButtonClick(targetPlan: AppPlan) {
-    if (targetPlan === "FREE") {
-      await handlePlanChange("FREE");
-      return;
-    }
-    await handleUpgradeTrigger(targetPlan);
-  }
-
-  function handleNeoReport() {
-    setNeoReportStamp(Date.now());
-    setStatus("NEO generated a fresh oversight report for the hive.");
+  function handleMotherReport() {
+    setMotherReportStamp(Date.now());
+    setStatus("Mother compiled a fresh Nexus oversight brief.");
   }
 
   const warningCalls = tracked.filter((token) => token.guardian_status === "WARNING");
   const safeCalls = tracked.filter((token) => token.guardian_status === "SAFE");
   const dangerAlerts = alerts.filter((alert) => alert.severity?.toUpperCase() === "DANGER");
-  const visibleSignals = paidSignals.map((signal) => {
-    const isLocked =
-      (signal.tier === "BASIC" && plan === "FREE") ||
-      (signal.tier === "PRO" && plan !== "PRO");
-    return { ...signal, isLocked };
-  });
-  const watcherSignals = useMemo(() => {
+  const visibleSignals = paidSignals.map((signal) => ({
+    ...signal,
+    isLocked: plan !== "PRO",
+  }));
+
+  const sentinelSignals = useMemo(() => {
     let reportCount = 0;
     try {
       const localReports = localStorage.getItem(LOCAL_REPORTS_KEY);
@@ -612,40 +563,45 @@ export function Pulse() {
 
     return {
       watchlistCount: watchlist.length,
-      alertCount: alerts.length + watcherAlerts.length,
+      alertCount: alerts.length + sentinelAlerts.length,
       trackedCount: tracked.length,
       reportCount,
       plan,
     };
-  }, [alerts.length, plan, tracked.length, watcherAlerts.length, watchlist.length]);
-  const syntheticWatchers = useMemo(
-    () => buildSyntheticWatchers(watcherSignals),
-    [watcherSignals],
+  }, [alerts.length, plan, tracked.length, sentinelAlerts.length, watchlist.length]);
+
+  const syntheticSentinels = useMemo(
+    () => buildSyntheticSentinels(sentinelSignals),
+    [sentinelSignals],
   );
-  const neoBriefing = useMemo(
-    () => buildNeoBriefing(syntheticWatchers, watcherSignals),
-    [syntheticWatchers, watcherSignals],
+  const motherBriefing = useMemo(
+    () => buildMotherBriefing(syntheticSentinels, sentinelSignals),
+    [syntheticSentinels, sentinelSignals],
   );
-  const neoDailyReport = useMemo(
-    () => buildNeoDailyReport(syntheticWatchers, watcherSignals),
-    [neoReportStamp, syntheticWatchers, watcherSignals],
+  const motherDailyReport = useMemo(
+    () => buildMotherDailyReport(syntheticSentinels, sentinelSignals),
+    [motherReportStamp, syntheticSentinels, sentinelSignals],
   );
+
+  const authBusyLabel =
+    authLoadPhrase === "nexus" ? "Connecting to Nexus..." : "Mother synchronizing...";
 
   return (
     <div className="page">
       <section className="page__intro">
         <h1 className="page__headline">Pulse</h1>
         <p className="page__lede">
-          Watcher command center with live warnings, safe calls, and active alerts.
+          Nexus command center: Sentinel warnings, safe calls, and live alerts.
         </p>
       </section>
 
       <div className="pulse-status-banner">
-        <p className="pulse-status-banner__label">Action status</p>
+        <p className="pulse-status-banner__label">Status</p>
         <p className="pulse-status-banner__message">{status}</p>
         {!hasSupabaseEnv ? (
           <p className="pulse-status-banner__hint">
-            Demo mode is active. Add Supabase and Stripe env vars in Vercel for real accounts and payments.
+            Demo mode works without signup. Add Supabase and Stripe environment variables for live
+            accounts and Nexus Pro.
           </p>
         ) : null}
       </div>
@@ -654,67 +610,67 @@ export function Pulse() {
         <div className="neo-command__head">
           <img className="neo-command__logo" src="/hivemind-logo.svg" alt="" aria-hidden />
           <div>
-            <p className="neo-command__eyebrow">NEO OVERSEER ONLINE</p>
-            <h2>NEO watches the Watchers.</h2>
+            <p className="neo-command__eyebrow">MOTHER · NEXUS OVERSEER</p>
+            <h2>Mother coordinates the Sentinels.</h2>
           </div>
         </div>
-        <p className="neo-command__briefing">{neoBriefing}</p>
+        <p className="neo-command__briefing">{motherBriefing}</p>
         <p className="neo-command__copy">
-          NEO audits Morpheus, Sentinel, Surge, Oracle, and Whale Watcher so each Guardian learns from reports,
-          alerts, watchlists, and mistakes over time.
+          Mother audits Morpheus, Warden, Surge, Oracle, and Whale Sentinel so each lane learns from
+          reports, alerts, watchlists, and hive memory over time.
         </p>
         <div className="neo-report">
           <div className="neo-report__metrics">
-            <span>Mood: {neoDailyReport.mood}</span>
-            <span>Health: {neoDailyReport.systemHealth}%</span>
-            <span>Grade: {neoDailyReport.oversightGrade}</span>
+            <span>Mood: {motherDailyReport.mood}</span>
+            <span>Health: {motherDailyReport.systemHealth}%</span>
+            <span>Grade: {motherDailyReport.oversightGrade}</span>
           </div>
-          <h3>{neoDailyReport.headline}</h3>
-          <p>{neoDailyReport.daySummary}</p>
+          <h3>{motherDailyReport.headline}</h3>
+          <p>{motherDailyReport.daySummary}</p>
           <ul>
-            {neoDailyReport.priorities.map((priority) => (
+            {motherDailyReport.priorities.map((priority) => (
               <li key={priority}>{priority}</li>
             ))}
           </ul>
-          <p className="neo-report__closing">{neoDailyReport.closingNote}</p>
-          <button className="neo-report__button" type="button" onClick={handleNeoReport}>
-            Ask NEO for report
+          <p className="neo-report__closing">{motherDailyReport.closingNote}</p>
+          <button className="neo-report__button" type="button" onClick={handleMotherReport}>
+            Ask Mother for a fresh brief
           </button>
         </div>
       </section>
 
       <section className="watcher-grid-panel">
         <div className="token-section__head">
-          <h2 className="token-section__title">Synthetic Watchers</h2>
-          <p className="token-section__lede">Levels, XP, confidence, and learning memory</p>
+          <h2 className="token-section__title">Nexus Sentinels</h2>
+          <p className="token-section__lede">Ranks, XP, confidence, and learning memory</p>
         </div>
         <div className="synthetic-watchers">
-          {syntheticWatchers.map((watcher) => {
+          {syntheticSentinels.map((sentinel) => {
             const progress =
-              watcher.level >= 5
+              sentinel.level >= 5
                 ? 100
-                : Math.min(100, Math.round((watcher.xp / watcher.nextLevelXp) * 100));
+                : Math.min(100, Math.round((sentinel.xp / sentinel.nextLevelXp) * 100));
             return (
               <article
-                className={`synthetic-watcher synthetic-watcher--${watcher.accent}`}
-                key={watcher.id}
+                className={`synthetic-watcher synthetic-watcher--${sentinel.accent}`}
+                key={sentinel.id}
               >
                 <div className="synthetic-watcher__top">
                   <div>
-                    <p className="synthetic-watcher__name">{watcher.name}</p>
-                    <p className="synthetic-watcher__role">{watcher.role}</p>
+                    <p className="synthetic-watcher__name">{sentinel.name}</p>
+                    <p className="synthetic-watcher__role">{sentinel.role}</p>
                   </div>
                   <span className="synthetic-watcher__level">
-                    Lv {watcher.level} {watcher.levelName}
+                    Lv {sentinel.level} {sentinel.levelName}
                   </span>
                 </div>
                 <div className="synthetic-watcher__meter">
                   <span style={{ width: `${progress}%` }} />
                 </div>
-                <p className="synthetic-watcher__status">{watcher.status}</p>
-                <p className="synthetic-watcher__lesson">{watcher.lesson}</p>
+                <p className="synthetic-watcher__status">{sentinel.status}</p>
+                <p className="synthetic-watcher__lesson">{sentinel.lesson}</p>
                 <p className="synthetic-watcher__confidence">
-                  Confidence: {watcher.confidence}% · XP: {watcher.xp}
+                  Confidence: {sentinel.confidence}% · XP: {sentinel.xp}
                 </p>
               </article>
             );
@@ -723,11 +679,20 @@ export function Pulse() {
       </section>
 
       <div className="pulse-card">
-        <p className="pulse-card__title">Auth</p>
+        <p className="pulse-card__title">Enter the Nexus</p>
+        <p className="pulse-card__subtitle pulse-card__subtitle--premium">Mother awaiting synchronization.</p>
         <div className="pulse-form">
+          <button className="pulse-demo-button pulse-demo-button--first" onClick={handleDemoMode} type="button">
+            Launch demo mode first
+          </button>
           <p className={`pulse-auth-message pulse-auth-message--${authMessage.tone}`} role="status">
             {authMessage.text}
           </p>
+          {authBusy ? (
+            <p className="pulse-nexus-loading" role="status">
+              {authBusyLabel}
+            </p>
+          ) : null}
           <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
           <input
             type="password"
@@ -742,35 +707,20 @@ export function Pulse() {
             <button onClick={handleSignIn} type="button" disabled={authBusy}>
               {authBusy ? "Working..." : "Sign in"}
             </button>
-            <button onClick={handleSignOut} type="button">
+            <button onClick={handleSignOut} type="button" disabled={authBusy}>
               Sign out
             </button>
           </div>
-          <button className="pulse-demo-button" onClick={handleDemoMode} type="button">
-            Launch demo mode
-          </button>
         </div>
       </div>
 
       <div className="pulse-card">
-        <p className="pulse-card__title">Profile</p>
-        <div className="pulse-form">
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Display name"
-          />
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
-          <button onClick={handleProfileSave} type="button">
-            Save profile
-          </button>
-        </div>
-      </div>
-
-      <div className="pulse-card">
-        <p className="pulse-card__title">Data actions</p>
+        <p className="pulse-card__title">Saved data</p>
+        <p className="pulse-card__body pulse-card__body--muted">
+          Sign in with Supabase to persist watchlists, community reports, and tracked tokens.
+        </p>
         <button onClick={handleSeedData} type="button">
-          Write watchlist/report/tracked token
+          Seed watchlist / report / tracked token
         </button>
       </div>
 
@@ -786,12 +736,12 @@ export function Pulse() {
             {warningCalls.map((token) => (
               <li key={`warning-${token.token_symbol}`}>
                 <span>{token.token_symbol ?? "UNKNOWN"}</span>
-                <strong>Watcher: WARNING</strong>
+                <strong>Sentinel: WARNING</strong>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="pulse-card__body">{watcherIdle}</p>
+          <p className="pulse-card__body">{sentinelIdle}</p>
         )}
       </div>
 
@@ -812,16 +762,16 @@ export function Pulse() {
             ))}
           </ul>
         ) : (
-          <p className="pulse-card__body">{getWatcherMessage("safe")}</p>
+          <p className="pulse-card__body">{getSentinelMessage("safe")}</p>
         )}
       </div>
 
       <div className="pulse-card">
-        <p className="pulse-card__title">Watcher alerts (live feed)</p>
-        {watcherAlerts.length ? (
+        <p className="pulse-card__title">Sentinel alerts (live feed)</p>
+        {sentinelAlerts.length ? (
           <ul className="pulse-list">
-            {watcherAlerts.map((alert) => (
-              <li key={`watcher-alert-${alert.tokenSymbol}-${alert.severity}`}>
+            {sentinelAlerts.map((alert) => (
+              <li key={`sentinel-alert-${alert.tokenSymbol}-${alert.severity}`}>
                 <span>
                   {alert.tokenSymbol} - {alert.note}
                 </span>
@@ -830,7 +780,7 @@ export function Pulse() {
             ))}
           </ul>
         ) : (
-          <p className="pulse-card__body">{getWatcherMessage("safe")}</p>
+          <p className="pulse-card__body">{getSentinelMessage("safe")}</p>
         )}
       </div>
 
@@ -848,7 +798,7 @@ export function Pulse() {
             ))}
           </ul>
         ) : (
-          <p className="pulse-card__body">The Watcher is observing. No active alerts.</p>
+          <p className="pulse-card__body">No active alerts. Sentinels are scanning.</p>
         )}
         {dangerAlerts.length ? (
           <p className="pulse-card__body pulse-card__body--danger">
@@ -857,90 +807,51 @@ export function Pulse() {
         ) : null}
       </div>
 
-      <div className="pulse-card">
-        <p className="pulse-card__title">Plans and paid signals</p>
-        <div className="pulse-tier-grid pulse-tier-grid--futuristic">
-          <article className="pulse-tier-card pulse-tier-card--free">
-            <p className="pulse-tier-card__name">Free</p>
-            <p className="pulse-tier-card__price">{TIER_DEFINITIONS.FREE.price}</p>
-            <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.FREE.summary}</p>
-          </article>
-          <article className="pulse-tier-card pulse-tier-card--basic">
-            <p className="pulse-tier-card__badge">Popular</p>
-            <p className="pulse-tier-card__name">Basic</p>
-            <p className="pulse-tier-card__price">{TIER_DEFINITIONS.BASIC.price}</p>
-            <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.BASIC.summary}</p>
-          </article>
-          <article className="pulse-tier-card pulse-tier-card--pro">
-            <p className="pulse-tier-card__badge">Elite</p>
-            <p className="pulse-tier-card__name">Pro</p>
-            <p className="pulse-tier-card__price">{TIER_DEFINITIONS.PRO.price}</p>
-            <p className="pulse-tier-card__summary">{TIER_DEFINITIONS.PRO.summary}</p>
+      <div className="pulse-card" id="nexus-pro">
+        <p className="pulse-card__title">Nexus Pro</p>
+        <div className="pulse-tier-grid pulse-tier-grid--single">
+          <article className="pulse-tier-card pulse-tier-card--pro pulse-tier-card--solo">
+            <p className="pulse-tier-card__badge">Included</p>
+            <p className="pulse-tier-card__name">Nexus Pro</p>
+            <p className="pulse-tier-card__price">$19.99/mo</p>
+            <p className="pulse-tier-card__summary">
+              Full Sentinel intelligence, priority live signals, and deeper risk context across the hive.
+            </p>
           </article>
         </div>
         <div className="pulse-actions pulse-actions--tiers">
-          <button
-            type="button"
-            className={plan === "FREE" ? "is-active-tier" : ""}
-            onClick={() => void handleTierButtonClick("FREE")}
-          >
-            {plan === "FREE" ? "Free active" : "Switch to Free"}
-          </button>
-          <button
-            type="button"
-            className={plan === "BASIC" ? "is-active-tier" : "pulse-button--basic"}
-            disabled={checkoutBusy}
-            onClick={() => void handleTierButtonClick("BASIC")}
-          >
-            {plan === "BASIC" ? "Basic active" : "Upgrade to Basic"}
-          </button>
-          <button
-            type="button"
-            className={plan === "PRO" ? "is-active-tier" : "pulse-button--pro"}
-            disabled={checkoutBusy}
-            onClick={() => void handleTierButtonClick("PRO")}
-          >
-            {plan === "PRO" ? "Pro active" : "Upgrade to Pro"}
-          </button>
+          {plan !== "PRO" ? (
+            <button
+              type="button"
+              className="pulse-button--pro"
+              disabled={checkoutBusy}
+              onClick={() => void handleUpgradeTrigger()}
+            >
+              {checkoutBusy ? "Opening…" : "Upgrade to Nexus Pro — $19.99/month"}
+            </button>
+          ) : (
+            <p className="pulse-card__body">Nexus Pro is active on your account.</p>
+          )}
         </div>
         <p className="pulse-card__body">Current plan: {formatPlanName(plan)}</p>
-        <button
-          type="button"
-          className="pulse-checkout"
-          disabled={checkoutBusy}
-          onClick={() => handleUpgradeTrigger(plan === "FREE" ? "BASIC" : "PRO")}
-        >
-          {checkoutBusy ? "Opening Stripe..." : "Upgrade now with Stripe"}
-        </button>
         {visibleSignals.length ? (
           <ul className="pulse-list">
             {visibleSignals.map((signal) => (
               <li key={signal.id}>
                 <span>
-                  {signal.title} - {signal.detail}
+                  {signal.title} — {signal.detail}
                 </span>
                 {signal.isLocked ? (
-                  <button
-                    type="button"
-                    disabled={checkoutBusy}
-                    onClick={() => handleUpgradeTrigger(signal.tier)}
-                  >
-                    {checkoutBusy ? "Opening..." : `Unlock ${formatPlanName(signal.tier)}`}
-                  </button>
+                  <strong>Included in Nexus Pro</strong>
                 ) : (
-                  <strong>{formatPlanName(signal.tier)} unlocked</strong>
+                  <strong>Unlocked</strong>
                 )}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="pulse-card__body">The Watcher is observing paid signal candidates.</p>
+          <p className="pulse-card__body">Sentinels are scanning for Nexus Pro signal candidates.</p>
         )}
-      </div>
-
-      <div className="pulse-card">
-        <p className="pulse-card__title">Status</p>
-        <p className="pulse-card__body">{status}</p>
       </div>
     </div>
   );

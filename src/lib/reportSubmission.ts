@@ -39,20 +39,26 @@ export async function submitHiveMindReport(input: SubmitReportInput): Promise<Su
   if (hasSupabaseEnv) {
     try {
       const user = await getCurrentUser();
-      if (user) {
-        await submitTokenReport(
-          user.id,
-          input.tokenSymbol,
-          input.tokenName,
-          reason,
-          input.tokenAddress,
-          details,
-        );
-        return { ok: true, channel: "supabase" };
+      if (!user) {
+        return {
+          ok: false,
+          message: "Sign in on Pulse (email and password) to submit reports to the hive.",
+        };
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Report failed";
-      return { ok: false, message };
+      await submitTokenReport(
+        user.id,
+        input.tokenSymbol,
+        input.tokenName,
+        reason,
+        input.tokenAddress,
+        details,
+      );
+      return { ok: true, channel: "supabase" };
+    } catch {
+      return {
+        ok: false,
+        message: "We could not save your report. Please try again shortly.",
+      };
     }
   }
 

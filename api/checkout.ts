@@ -1,11 +1,10 @@
 import Stripe from "stripe";
 import type { ViteDevServer } from "vite";
 
-type PaidPlan = "BASIC" | "PRO";
+type PaidPlan = "PRO";
 
 type CheckoutEnv = {
   STRIPE_SECRET_KEY?: string;
-  STRIPE_PRICE_ID_BASIC?: string;
   STRIPE_PRICE_ID_PRO?: string;
   VITE_APP_URL?: string;
 };
@@ -49,18 +48,18 @@ function getHeaderValue(value: string | string[] | undefined) {
 
 function getCheckoutErrorMessage(error: unknown) {
   if (!(error instanceof Error)) {
-    return "Failed to create checkout session";
+    return "Checkout is temporarily unavailable. Please try again shortly.";
   }
 
   const message = error.message.toLowerCase();
   if (message.includes("expired api key") || message.includes("invalid api key")) {
-    return "Stripe rejected the secret key. Replace STRIPE_SECRET_KEY with an active Stripe secret key, then redeploy or restart.";
+    return "Payments are not configured correctly on the server. Please try again later.";
   }
   if (message.includes("no such price")) {
-    return "Stripe price ID was not found. Check STRIPE_PRICE_ID_BASIC and STRIPE_PRICE_ID_PRO.";
+    return "Subscription pricing is not set up yet. Please contact support.";
   }
 
-  return error.message;
+  return "Checkout could not be started. Please try again in a moment.";
 }
 
 async function createCheckoutResponse(
@@ -69,27 +68,24 @@ async function createCheckoutResponse(
   env: CheckoutEnv,
 ): Promise<JsonResponse> {
   const secretKey = env.STRIPE_SECRET_KEY;
-  const basicPriceId = env.STRIPE_PRICE_ID_BASIC;
   const proPriceId = env.STRIPE_PRICE_ID_PRO;
 
-  if (!secretKey || !basicPriceId || !proPriceId) {
+  if (!secretKey || !proPriceId) {
     return {
       statusCode: 500,
       body: {
-        error:
-          "Stripe env is missing. Set STRIPE_SECRET_KEY, STRIPE_PRICE_ID_BASIC, and STRIPE_PRICE_ID_PRO.",
+        error: "Payments are not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PRO.",
       },
     };
   }
 
   const plan = payload.plan;
-  if (plan !== "BASIC" && plan !== "PRO") {
+  if (plan !== "PRO") {
     return { statusCode: 400, body: { error: "Invalid plan" } };
   }
 
   try {
     const stripe = new Stripe(secretKey);
-    const priceId = plan === "BASIC" ? basicPriceId : proPriceId;
     const requestOrigin = getHeaderValue(headers.origin);
     const requestHost = getHeaderValue(headers.host);
     const appUrl =
@@ -100,12 +96,12 @@ async function createCheckoutResponse(
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/pulse?checkout=success&plan=${plan}`,
+      line_items: [{ price: proPriceId, quantity: 1 }],
+      success_url: `${appUrl}/pulse?checkout=success&plan=PRO`,
       cancel_url: `${appUrl}/pulse?checkout=cancel`,
       customer_email: payload.email || undefined,
       metadata: {
-        plan,
+        plan: "PRO",
         userId: userId || "anonymous",
       },
     };
@@ -139,12 +135,12 @@ export function configureStripeCheckoutApi(server: ViteDevServer, env: CheckoutE
       res.statusCode = result.statusCode;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify(result.body));
-    } catch (error) {
+    } catch {
       res.statusCode = 500;
       res.setHeader("Content-Type", "application/json");
       res.end(
         JSON.stringify({
-          error: error instanceof Error ? error.message : "Failed to create checkout session",
+          error: "Checkout is temporarily unavailable. Please try again shortly.",
         }),
       );
     }

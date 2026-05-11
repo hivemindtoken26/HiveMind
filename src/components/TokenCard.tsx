@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { submitHiveMindReport } from "../lib/reportSubmission";
+import { TokenLogo } from "./TokenLogo";
 import type { GuardianRisk, Token } from "../data/tokens";
 
 const riskStyles: Record<
@@ -54,43 +53,19 @@ type Props = { token: Token };
 export function TokenCard({ token }: Props) {
   const risk = riskStyles[token.guardianRisk];
   const up = token.change24hPct >= 0;
-  const [reportBusy, setReportBusy] = useState(false);
-  const [reportNote, setReportNote] = useState<string | null>(null);
   const marketUrl = token.mintAddress
     ? `https://dexscreener.com/solana/${token.mintAddress}`
     : `https://dexscreener.com/search?q=${encodeURIComponent(token.symbol)}`;
-
-  async function handleReport() {
-    setReportBusy(true);
-    setReportNote(null);
-    const result = await submitHiveMindReport({
-      tokenSymbol: token.symbol,
-      tokenName: token.name,
-      tokenAddress: token.mintAddress,
-    });
-    setReportBusy(false);
-    if (result.ok) {
-      setReportNote(
-        result.channel === "supabase"
-          ? "Report submitted."
-          : "Saved locally. Sign in on Pulse to sync to HiveMind.",
-      );
-    } else {
-      setReportNote(result.message);
-    }
-  }
 
   return (
     <article className="token-card">
       <div className="token-card__top">
         <div className="token-card__identity">
-          <div className="token-card__avatar" aria-hidden>
-            {token.symbol.slice(0, 2)}
-          </div>
-          <div>
-            <h2 className="token-card__name">{token.name}</h2>
-            <p className="token-card__symbol">{token.symbol}</p>
-          </div>
+          <TokenLogo token={token} />
+          <h2 className="token-card__name">
+            <span className="token-card__name-text">{token.name}</span>
+            <span className="token-card__symbol">{token.symbol}</span>
+          </h2>
         </div>
         <div
           className="token-card__risk"
@@ -129,25 +104,13 @@ export function TokenCard({ token }: Props) {
         <a href={marketUrl} target="_blank" rel="noopener noreferrer" className="token-card__trade">
           Sell
         </a>
-        <Link
-          className="token-card__trade"
-          to={`/hub?intent=stake&symbol=${encodeURIComponent(token.symbol)}`}
-        >
-          Stake
-        </Link>
-        <button
-          type="button"
-          className="token-card__report"
-          disabled={reportBusy}
-          onClick={handleReport}
-        >
-          {reportBusy ? "Sending…" : "Report token"}
+        <button type="button" className="token-card__trade token-card__trade--disabled" disabled>
+          Coming soon
         </button>
         <Link to={`/token/${token.id}`} className="token-card__details">
           View details
         </Link>
       </div>
-      {reportNote ? <p className="token-card__report-status">{reportNote}</p> : null}
     </article>
   );
 }
