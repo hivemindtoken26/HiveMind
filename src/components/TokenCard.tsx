@@ -75,7 +75,7 @@ export function TokenCard({ token }: Props) {
             className="token-card__risk-dot"
             style={{ background: risk.dot }}
           />
-          Nexus · {nexusRiskBandLabel(token.guardianRisk)}
+          The Nexus · {nexusRiskBandLabel(token.guardianRisk)}
         </div>
       </div>
       <div className="token-card__bottom">

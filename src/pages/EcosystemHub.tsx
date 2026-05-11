@@ -115,8 +115,8 @@ export function EcosystemHub() {
       <section id="hub-utility" className="ecosystem-hub__section marketing-panel">
         <h2>Token utility platform</h2>
         <p>
-          HiveMind token utility is designed around access, incentives, and alignment: unlock deeper Nexus Sentinel
-          feeds,
+          HiveMind token utility is designed around access, incentives, and alignment: unlock deeper feeds from
+          The Nexus Sentinels,
           fee discounts, partner campaigns, and (when live) staking participation. Exact tokenomics are published
           separately and may change before launch.
         </p>

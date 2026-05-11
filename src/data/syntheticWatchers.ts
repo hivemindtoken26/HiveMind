@@ -40,57 +40,48 @@ const sentinelSeeds = [
   {
     id: "mother",
     name: "Mother",
-    role: "Overseer of the Nexus Sentinels",
+    role: "Core AI",
     baseXp: 180,
-    status: "Auditing every Sentinel for accuracy, drift, and missed alerts.",
-    lesson: "Mother learns from the whole hive and reports the day back to you.",
+    status: "Coordinating Sentinel Aegis, Sentinel Pulse, Sentinel Titan, and Sentinel Cipher across The Nexus.",
+    lesson: "Mother synthesizes every Sentinel stream into one operational picture.",
     accent: "gold" as const,
     isMother: true,
   },
   {
-    id: "morpheus",
-    name: "Morpheus",
-    role: "Trending token momentum and hype tracker",
+    id: "aegis",
+    name: "Sentinel Aegis",
+    role: "Scam and risk detection",
     baseXp: 40,
-    status: "Tracking trending tokens, momentum spikes, hype waves, and fresh suspicious launches.",
-    lesson: "Learning which hype patterns become real movement and which ones become real risk.",
+    status: "Screening contracts, liquidity shifts, and early scam signatures.",
+    lesson: "Confirmed reports sharpen Aegis against the next risk pattern.",
     accent: "green" as const,
   },
   {
-    id: "warden",
-    name: "Warden",
-    role: "Liquidity and wallet guard",
+    id: "pulse",
+    name: "Sentinel Pulse",
+    role: "Momentum and trend analysis",
     baseXp: 78,
-    status: "Watching liquidity depth, whale concentration, and fast exits.",
-    lesson: "Learning from tokens with unstable liquidity and holder clusters.",
+    status: "Tracking momentum, trend breaks, and abnormal volume bursts.",
+    lesson: "Pulse learns which moves are real demand and which are noise.",
     accent: "green" as const,
   },
   {
-    id: "surge",
-    name: "Surge",
-    role: "Sudden volume spike detector",
+    id: "titan",
+    name: "Sentinel Titan",
+    role: "Whale wallet tracking",
     baseXp: 104,
-    status: "Watching for sudden volume spikes, abnormal trading bursts, and fast momentum breaks.",
-    lesson: "Learning which volume spikes are real demand and which ones are manipulation.",
-    accent: "green" as const,
-  },
-  {
-    id: "oracle",
-    name: "Oracle",
-    role: "Pattern intelligence",
-    baseXp: 116,
-    status: "Comparing today’s warnings against past scam behavior.",
-    lesson: "Learning which warning combinations deserve higher confidence.",
-    accent: "gold" as const,
-  },
-  {
-    id: "whale-sentinel",
-    name: "Whale Sentinel",
-    role: "Large wallet, big buy, and big sell tracker",
-    baseXp: 92,
-    status: "Tracking large wallets, big buys, big sells, whale concentration, and fast exits.",
-    lesson: "Learning which whale buys show real demand and which whale sells become danger.",
+    status: "Following large wallets, concentration shifts, and outsized flows.",
+    lesson: "Titan maps whale behavior to exit risk before it hits the feed.",
     accent: "danger" as const,
+  },
+  {
+    id: "cipher",
+    name: "Sentinel Cipher",
+    role: "Pattern recognition and AI intelligence",
+    baseXp: 116,
+    status: "Correlating historical ripples with today’s warning combinations.",
+    lesson: "Cipher tightens confidence when multiple weak signals align.",
+    accent: "gold" as const,
   },
 ];
 
@@ -135,14 +126,13 @@ export function buildMotherBriefing(sentinels: SyntheticSentinel[], signals: Sen
   const watchedTokens = signals.watchlistCount + signals.trackedCount;
   const topLevel = Math.max(...sentinels.map((s) => s.level));
 
-  return `Mother report: ${activeAlerts} alert signal${activeAlerts === 1 ? "" : "s"} reviewed, ${watchedTokens} watched asset${watchedTokens === 1 ? "" : "s"} monitored, top Sentinel rank ${topLevel}. ${mother?.confidence ?? 70}% oversight confidence.`;
+  return `The Nexus · Mother report: ${activeAlerts} alert signal${activeAlerts === 1 ? "" : "s"} reviewed, ${watchedTokens} watched asset${watchedTokens === 1 ? "" : "s"} monitored, top Sentinel rank ${topLevel}. ${mother?.confidence ?? 70}% oversight confidence.`;
 }
 
 export function buildMotherDailyReport(
   sentinels: SyntheticSentinel[],
   signals: SentinelSignals,
 ): MotherDailyReport {
-  const mother = sentinels.find((s) => s.isMother);
   const averageConfidence = Math.round(
     sentinels.reduce((total, s) => total + s.confidence, 0) / sentinels.length,
   );
@@ -160,18 +150,18 @@ export function buildMotherDailyReport(
     mood,
     systemHealth,
     oversightGrade,
-    headline: `${mother?.name ?? "Mother"} is online. Sentinel discipline is ${oversightGrade}-grade.`,
+    headline: `Mother connected. Sentinel discipline is ${oversightGrade}-grade.`,
     daySummary:
       watchedAssets > 0
         ? `${watchedAssets} watched asset${watchedAssets === 1 ? "" : "s"} tracked, ${activeAlerts} alert stream${activeAlerts === 1 ? "" : "s"} reviewed, and ${signals.reportCount} hive report${signals.reportCount === 1 ? "" : "s"} folded into memory.`
-        : "No watched assets yet. Mother is standing by in demo mode and waiting for the hive to feed Nexus reports.",
+        : "No watched assets yet. Mother is standing by in demo mode and waiting for The Nexus to receive fresh reports.",
     priorities: [
       activeAlerts > 0
         ? "Review active alerts and confirm whether each warning was useful."
-        : "Add tokens to your watchlist so Nexus Sentinels can start building memory.",
+        : "Add tokens to your watchlist so Sentinels can start building memory.",
       signals.reportCount > 0
-        ? "Keep collecting community reports so Whale Sentinel can strengthen scam-pattern memory."
-        : "Use report buttons on suspicious tokens to train Whale Sentinel and Mother.",
+        ? "Keep collecting community reports so Sentinel Cipher can strengthen pattern memory."
+        : "Use report buttons on suspicious tokens to train Sentinel Aegis and Mother.",
       topSentinel
         ? `${topSentinel.name} is leading today at level ${topSentinel.level}. Feed it more signals to push toward ${topSentinel.levelName}.`
         : "Launch demo mode to wake the Sentinels and generate a training baseline.",

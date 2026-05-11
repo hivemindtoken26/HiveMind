@@ -69,7 +69,7 @@ export function HomeFeed() {
                   src="/hivemind-logo-art.png"
                   alt="HiveMind"
                 />
-                <p className="landing-hero__eyebrow landing-hero__eyebrow--logo-frame">Nexus AI</p>
+                <p className="landing-hero__eyebrow landing-hero__eyebrow--logo-frame">The Nexus</p>
               </div>
               <span className="neural-node neural-node--mid-right" aria-hidden />
               <span className="neural-node neural-node--right" aria-hidden />
@@ -79,7 +79,7 @@ export function HomeFeed() {
             Detect risky tokens before you buy.
           </h1>
           <p className="landing-hero__subtext">
-            Nexus Sentinels scan tokens, detect risk, track whales, flag scams, and help you move before
+            The Nexus Sentinels scan tokens, detect risk, track whales, flag scams, and help you move before
             the crowd sees the danger.
           </p>
           <p className="landing-hero__hook">Before the rug. Before the crash.</p>
@@ -96,15 +96,15 @@ export function HomeFeed() {
         <article className="landing-info-card landing-info-card--spotlight">
           <h2>One flash of intel before the candles catch up.</h2>
           <p>
-            Nexus Sentinels slam liquidity drift, whale-sized moves, violent volume, and swarm reports into a
+            The Nexus Sentinels slam liquidity drift, whale-sized moves, violent volume, and swarm reports into a
             single hit—you feel the shift before the feed goes loud.
           </p>
         </article>
         <article className="landing-info-card">
           <h2>Detect risks. Track whales. Flag scams.</h2>
           <p>
-            Morpheus watches hype, Surge catches volume spikes, Whale Sentinel follows big wallets,
-            and Mother reports what the hive needs to know.
+            The Nexus routes work through Mother and four Sentinels—Sentinel Aegis, Sentinel Pulse, Sentinel
+            Titan, and Sentinel Cipher—so you get one coherent signal instead of noise.
           </p>
         </article>
         <article className="landing-info-card landing-info-card--warning">
@@ -118,7 +118,7 @@ export function HomeFeed() {
 
       <section className="guardian-banner">
         <p className="guardian-banner__message">
-          {sentinelIdle} Hive protection system active.
+          {sentinelIdle} The Nexus · Sentinels active.
         </p>
         <p className="guardian-banner__source">
           Data source: {feedSource === "live" ? "DexScreener live feed" : "Mock fallback feed"}
@@ -179,7 +179,7 @@ export function HomeFeed() {
           <p className="hive-vision__eyebrow">Hivemind Security Grid</p>
           <h2 className="hive-vision__title">Built to be the safest Solana trading command center.</h2>
           <p className="hive-vision__copy">
-            AI risk modeling, crowd intelligence, and real-time Nexus signals work as one system.
+            AI risk modeling, crowd intelligence, and real-time signals from The Nexus work as one system.
           </p>
         </div>
         <div className="hive-vision__grid">
@@ -194,7 +194,7 @@ export function HomeFeed() {
             <p className="hive-vision-card__icon">COM</p>
             <p className="hive-vision-card__title">Community Protection</p>
             <p className="hive-vision-card__body">
-              Reports from traders feed into Nexus scoring so risky tokens are flagged faster.
+              Reports from traders feed into The Nexus scoring so risky tokens are flagged faster.
             </p>
           </article>
           <article className="hive-vision-card">

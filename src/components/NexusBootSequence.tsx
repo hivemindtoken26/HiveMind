@@ -10,10 +10,10 @@ const PHASE_COPY: readonly string[] = [
 ] as const;
 
 const SENTINELS = [
-  { name: "Sentinel Aegis", role: "→ risk analysis" },
-  { name: "Sentinel Pulse", role: "→ momentum analysis" },
-  { name: "Sentinel Titan", role: "→ whale tracking" },
-  { name: "Sentinel Cipher", role: "→ pattern recognition" },
+  { name: "Sentinel Aegis", role: "Scam and risk detection" },
+  { name: "Sentinel Pulse", role: "Momentum and trend analysis" },
+  { name: "Sentinel Titan", role: "Whale wallet tracking" },
+  { name: "Sentinel Cipher", role: "Pattern recognition and AI intelligence" },
 ] as const;
 
 /**
@@ -119,7 +119,7 @@ export function NexusBootSequence({ children }: Props) {
           <div className="nexus-boot__frame nexus-boot__frame--br" aria-hidden />
 
           <div className="nexus-boot__center">
-            <p className="nexus-boot__eyebrow">NEXUS / OPERATING LAYER</p>
+            <p className="nexus-boot__eyebrow">THE NEXUS</p>
 
             <div className="nexus-boot__title-wrap">
               <div className="nexus-boot__title-block" key={phase}>

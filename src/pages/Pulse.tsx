@@ -287,7 +287,7 @@ export function Pulse() {
     }
     try {
       setAuthBusy(true);
-      setAuthMessage({ tone: "info", text: "Connecting to Nexus..." });
+      setAuthMessage({ tone: "info", text: "Connecting to The Nexus..." });
       if (!hasSupabaseEnv) {
         const demoId = `demo-${Date.now()}`;
         localStorage.setItem(DEMO_SESSION_KEY, demoId);
@@ -313,7 +313,7 @@ export function Pulse() {
         }
       }
       const message = result.session
-        ? "Welcome to the Nexus. You are signed in."
+        ? "Welcome to The Nexus. You are signed in."
         : "Check your inbox to confirm your email, then sign in.";
       setAuthMessage({ tone: "success", text: message });
       setStatus(message);
@@ -343,7 +343,7 @@ export function Pulse() {
     }
     try {
       setAuthBusy(true);
-      setAuthMessage({ tone: "info", text: "Connecting to Nexus..." });
+      setAuthMessage({ tone: "info", text: "Connecting to The Nexus..." });
       if (!hasSupabaseEnv) {
         const demoId = localStorage.getItem(DEMO_SESSION_KEY) ?? `demo-${Date.now()}`;
         localStorage.setItem(DEMO_SESSION_KEY, demoId);
@@ -370,7 +370,7 @@ export function Pulse() {
       setUserEmail(signedIn.email ?? email);
       const message = signedIn.email
         ? `Synchronized as ${signedIn.email}.`
-        : "Synchronized with Nexus.";
+        : "Synchronized with The Nexus.";
       setAuthMessage({ tone: "success", text: message });
       setStatus(message);
       void loadData(signedIn);
@@ -585,14 +585,14 @@ export function Pulse() {
   );
 
   const authBusyLabel =
-    authLoadPhrase === "nexus" ? "Connecting to Nexus..." : "Mother synchronizing...";
+    authLoadPhrase === "nexus" ? "Connecting to The Nexus..." : "Mother synchronizing...";
 
   return (
     <div className="page">
       <section className="page__intro">
         <h1 className="page__headline">Pulse</h1>
         <p className="page__lede">
-          Nexus command center: Sentinel warnings, safe calls, and live alerts.
+          The Nexus command center: Sentinel warnings, safe calls, and live alerts.
         </p>
       </section>
 
@@ -607,21 +607,31 @@ export function Pulse() {
         ) : null}
       </div>
 
-      <section className="neo-command">
-        <div className="neo-command__head">
-          <img className="neo-command__logo" src="/hivemind-logo.svg" alt="" aria-hidden />
+      <section className="nexus-core-panel">
+        <div className="nexus-core-panel__head">
+          <img className="nexus-core-panel__logo" src="/hivemind-logo.svg" alt="" aria-hidden />
           <div>
-            <p className="neo-command__eyebrow">MOTHER · NEXUS OVERSEER</p>
-            <h2>Mother coordinates the Sentinels.</h2>
+            <p className="nexus-core-panel__eyebrow">The Nexus</p>
+            <h2 className="nexus-core-panel__title">
+              Mother
+              <span className="nexus-core-panel__core-ai">Core AI</span>
+            </h2>
           </div>
         </div>
-        <p className="neo-command__briefing">{motherBriefing}</p>
-        <p className="neo-command__copy">
-          Mother audits Morpheus, Warden, Surge, Oracle, and Whale Sentinel so each lane learns from
-          reports, alerts, watchlists, and hive memory over time.
+
+        <div className="nexus-core-panel__status" aria-live="polite">
+          <p className="nexus-core-panel__status-title">NEXUS ONLINE</p>
+          <p className="nexus-core-panel__status-line">Mother connected.</p>
+          <p className="nexus-core-panel__status-line">4 Sentinels active.</p>
+        </div>
+
+        <p className="nexus-core-panel__briefing">{motherBriefing}</p>
+        <p className="nexus-core-panel__copy">
+          Mother coordinates Sentinel Aegis, Sentinel Pulse, Sentinel Titan, and Sentinel Cipher—each lane learns
+          from reports, alerts, watchlists, and hive memory over time.
         </p>
-        <div className="neo-report">
-          <div className="neo-report__metrics">
+        <div className="mother-report">
+          <div className="mother-report__metrics">
             <span>Mood: {motherDailyReport.mood}</span>
             <span>Health: {motherDailyReport.systemHealth}%</span>
             <span>Grade: {motherDailyReport.oversightGrade}</span>
@@ -633,49 +643,53 @@ export function Pulse() {
               <li key={priority}>{priority}</li>
             ))}
           </ul>
-          <p className="neo-report__closing">{motherDailyReport.closingNote}</p>
-          <button className="neo-report__button" type="button" onClick={handleMotherReport}>
+          <p className="mother-report__closing">{motherDailyReport.closingNote}</p>
+          <button className="mother-report__button" type="button" onClick={handleMotherReport}>
             Ask Mother for a fresh brief
           </button>
         </div>
       </section>
 
-      <section className="watcher-grid-panel">
+      <section className="sentinel-grid-panel">
         <div className="token-section__head">
-          <h2 className="token-section__title">Nexus Sentinels</h2>
-          <p className="token-section__lede">Ranks, XP, confidence, and learning memory</p>
+          <h2 className="token-section__title">Sentinels</h2>
+          <p className="token-section__lede">
+            Four specialist agents under Mother · ranks, XP, confidence, and learning memory
+          </p>
         </div>
-        <div className="synthetic-watchers">
-          {syntheticSentinels.map((sentinel) => {
-            const progress =
-              sentinel.level >= 5
-                ? 100
-                : Math.min(100, Math.round((sentinel.xp / sentinel.nextLevelXp) * 100));
-            return (
-              <article
-                className={`synthetic-watcher synthetic-watcher--${sentinel.accent}`}
-                key={sentinel.id}
-              >
-                <div className="synthetic-watcher__top">
-                  <div>
-                    <p className="synthetic-watcher__name">{sentinel.name}</p>
-                    <p className="synthetic-watcher__role">{sentinel.role}</p>
+        <div className="synthetic-sentinels">
+          {syntheticSentinels
+            .filter((s) => !s.isMother)
+            .map((sentinel) => {
+              const progress =
+                sentinel.level >= 5
+                  ? 100
+                  : Math.min(100, Math.round((sentinel.xp / sentinel.nextLevelXp) * 100));
+              return (
+                <article
+                  className={`synthetic-sentinel synthetic-sentinel--${sentinel.accent}`}
+                  key={sentinel.id}
+                >
+                  <div className="synthetic-sentinel__top">
+                    <div>
+                      <p className="synthetic-sentinel__name">{sentinel.name}</p>
+                      <p className="synthetic-sentinel__desc">{sentinel.role}</p>
+                    </div>
+                    <span className="synthetic-sentinel__level">
+                      Lv {sentinel.level} {sentinel.levelName}
+                    </span>
                   </div>
-                  <span className="synthetic-watcher__level">
-                    Lv {sentinel.level} {sentinel.levelName}
-                  </span>
-                </div>
-                <div className="synthetic-watcher__meter">
-                  <span style={{ width: `${progress}%` }} />
-                </div>
-                <p className="synthetic-watcher__status">{sentinel.status}</p>
-                <p className="synthetic-watcher__lesson">{sentinel.lesson}</p>
-                <p className="synthetic-watcher__confidence">
-                  Confidence: {sentinel.confidence}% · XP: {sentinel.xp}
-                </p>
-              </article>
-            );
-          })}
+                  <div className="synthetic-sentinel__meter">
+                    <span style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="synthetic-sentinel__status">{sentinel.status}</p>
+                  <p className="synthetic-sentinel__lesson">{sentinel.lesson}</p>
+                  <p className="synthetic-sentinel__confidence">
+                    Confidence: {sentinel.confidence}% · XP: {sentinel.xp}
+                  </p>
+                </article>
+              );
+            })}
         </div>
       </section>
 
@@ -737,7 +751,7 @@ export function Pulse() {
             {warningCalls.map((token) => (
               <li key={`warning-${token.token_symbol}`}>
                 <span>{token.token_symbol ?? "UNKNOWN"}</span>
-                <strong>Nexus · {nexusRiskBandLabel("WARNING")}</strong>
+                <strong>The Nexus · {nexusRiskBandLabel("WARNING")}</strong>
               </li>
             ))}
           </ul>
@@ -754,7 +768,7 @@ export function Pulse() {
               <li key={`safe-${token.token_symbol}`}>
                 <span>{token.token_symbol ?? "UNKNOWN"}</span>
                 <strong>
-                  Nexus · {nexusRiskBandLabel(token.guardian_status ?? "SAFE")}
+                  The Nexus · {nexusRiskBandLabel(token.guardian_status ?? "SAFE")}
                   {typeof token.guardian_score === "number"
                     ? ` (${token.guardian_score}/100)`
                     : ""}

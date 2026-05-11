@@ -1,22 +1,22 @@
 const sentinelIdleMessages = [
-  "Nexus Sentinels are observing liquidity flow across the hive.",
-  "Nexus Sentinels are tracking volume spikes in real time.",
-  "Nexus Sentinels are monitoring contract behavior for risk shifts.",
+  "Sentinels are observing liquidity flow across The Nexus.",
+  "Sentinels are tracking volume spikes in real time.",
+  "Sentinels are monitoring contract behavior for risk shifts.",
 ];
 
 /** User-facing risk copy for Sentinel / Nexus intelligence. */
 export function getSentinelMessage(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === "safe") {
-    return "The Sentinel sees no immediate threat.";
+    return "Sentinels see no immediate threat.";
   }
   if (normalized === "warning") {
-    return "The Sentinel detected unstable activity.";
+    return "Sentinels detected unstable activity.";
   }
   if (normalized === "danger") {
-    return "The Sentinel advises caution. Multiple risk signals detected.";
+    return "Sentinels advise caution. Multiple risk signals detected.";
   }
-  return "Nexus Sentinels are observing the network...";
+  return "Sentinels are observing the network...";
 }
 
 export function getSentinelIdleMessage(seed: number): string {
