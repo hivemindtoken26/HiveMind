@@ -3,17 +3,17 @@ import { useEffect, useRef, useState } from "react";
 
 const PHASE_COPY: readonly string[] = [
   "NEXUS INITIALIZING",
-  "Mother online.",
+  "Mother Core: Platform intelligence online",
   "Sentinels synchronizing...",
   "Market intelligence connected.",
   "ENTER THE NEXUS",
 ] as const;
 
 const SENTINELS = [
-  { name: "Sentinel Aegis", role: "Scam and risk detection" },
-  { name: "Sentinel Pulse", role: "Momentum and trend analysis" },
-  { name: "Sentinel Titan", role: "Whale wallet tracking" },
-  { name: "Sentinel Cipher", role: "Pattern recognition and AI intelligence" },
+  { name: "Sentinel Aegis", role: "Scam and risk detection." },
+  { name: "Sentinel Pulse", role: "Momentum and trend analysis." },
+  { name: "Sentinel Titan", role: "Whale wallet tracking." },
+  { name: "Sentinel Cipher", role: "Pattern recognition and AI intelligence." },
 ] as const;
 
 /**

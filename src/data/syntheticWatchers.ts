@@ -42,15 +42,15 @@ const sentinelSeeds = [
     name: "Mother",
     role: "Core AI",
     baseXp: 180,
-    status: "Coordinating Sentinel Aegis, Sentinel Pulse, Sentinel Titan, and Sentinel Cipher across The Nexus.",
-    lesson: "Mother synthesizes every Sentinel stream into one operational picture.",
+    status: "Mother Core: Coordinating Sentinel lanes across The Nexus.",
+    lesson: "Mother Core binds Sentinel outputs into one operational picture.",
     accent: "gold" as const,
     isMother: true,
   },
   {
     id: "aegis",
     name: "Sentinel Aegis",
-    role: "Scam and risk detection",
+    role: "Scam and risk detection.",
     baseXp: 40,
     status: "Screening contracts, liquidity shifts, and early scam signatures.",
     lesson: "Confirmed reports sharpen Aegis against the next risk pattern.",
@@ -59,7 +59,7 @@ const sentinelSeeds = [
   {
     id: "pulse",
     name: "Sentinel Pulse",
-    role: "Momentum and trend analysis",
+    role: "Momentum and trend analysis.",
     baseXp: 78,
     status: "Tracking momentum, trend breaks, and abnormal volume bursts.",
     lesson: "Pulse learns which moves are real demand and which are noise.",
@@ -68,7 +68,7 @@ const sentinelSeeds = [
   {
     id: "titan",
     name: "Sentinel Titan",
-    role: "Whale wallet tracking",
+    role: "Whale wallet tracking.",
     baseXp: 104,
     status: "Following large wallets, concentration shifts, and outsized flows.",
     lesson: "Titan maps whale behavior to exit risk before it hits the feed.",
@@ -77,9 +77,9 @@ const sentinelSeeds = [
   {
     id: "cipher",
     name: "Sentinel Cipher",
-    role: "Pattern recognition and AI intelligence",
+    role: "Pattern recognition and AI intelligence.",
     baseXp: 116,
-    status: "Correlating historical ripples with today’s warning combinations.",
+    status: "Correlating historical ripples with today's warning combinations.",
     lesson: "Cipher tightens confidence when multiple weak signals align.",
     accent: "gold" as const,
   },
@@ -126,7 +126,7 @@ export function buildMotherBriefing(sentinels: SyntheticSentinel[], signals: Sen
   const watchedTokens = signals.watchlistCount + signals.trackedCount;
   const topLevel = Math.max(...sentinels.map((s) => s.level));
 
-  return `The Nexus · Mother report: ${activeAlerts} alert signal${activeAlerts === 1 ? "" : "s"} reviewed, ${watchedTokens} watched asset${watchedTokens === 1 ? "" : "s"} monitored, top Sentinel rank ${topLevel}. ${mother?.confidence ?? 70}% oversight confidence.`;
+  return `The Nexus · Sentinels overview: ${activeAlerts} alert signal${activeAlerts === 1 ? "" : "s"} reviewed, ${watchedTokens} watched asset${watchedTokens === 1 ? "" : "s"} monitored, top Sentinel rank ${topLevel}. Oversight confidence ${mother?.confidence ?? 70}%.`;
 }
 
 export function buildMotherDailyReport(
@@ -150,27 +150,27 @@ export function buildMotherDailyReport(
     mood,
     systemHealth,
     oversightGrade,
-    headline: `Mother connected. Sentinel discipline is ${oversightGrade}-grade.`,
+    headline: `Mother Core: System stable — Sentinel discipline is ${oversightGrade}-grade.`,
     daySummary:
       watchedAssets > 0
         ? `${watchedAssets} watched asset${watchedAssets === 1 ? "" : "s"} tracked, ${activeAlerts} alert stream${activeAlerts === 1 ? "" : "s"} reviewed, and ${signals.reportCount} hive report${signals.reportCount === 1 ? "" : "s"} folded into memory.`
-        : "No watched assets yet. Mother is standing by in demo mode and waiting for The Nexus to receive fresh reports.",
+        : "No watchlisted assets yet. The Nexus is in standby demo mode, waiting for fresh reports.",
     priorities: [
       activeAlerts > 0
         ? "Review active alerts and confirm whether each warning was useful."
         : "Add tokens to your watchlist so Sentinels can start building memory.",
       signals.reportCount > 0
         ? "Keep collecting community reports so Sentinel Cipher can strengthen pattern memory."
-        : "Use report buttons on suspicious tokens to train Sentinel Aegis and Mother.",
+        : "Use report buttons on suspicious tokens to train Aegis and the Sentinels.",
       topSentinel
         ? `${topSentinel.name} is leading today at level ${topSentinel.level}. Feed it more signals to push toward ${topSentinel.levelName}.`
         : "Launch demo mode to wake the Sentinels and generate a training baseline.",
     ],
     closingNote:
       mood === "High Guard"
-        ? "Mother recommends staying defensive today. The hive is seeing enough activity to keep shields hot."
+        ? "The Nexus recommends staying defensive today. Activity is elevated—keep alerts on."
         : mood === "Alert"
-          ? "Mother sees movement worth watching. Keep the Sentinels fed and verify anything suspicious."
-          : "Mother reports a calm grid. Good day to train the hive and prepare stronger alerts.",
+          ? "Sentinels see movement worth watching. Verify anything suspicious."
+          : "The Nexus reports a calm grid. Good day to train watchlists and sharpen alerts.",
   };
 }

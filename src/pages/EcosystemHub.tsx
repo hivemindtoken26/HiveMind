@@ -64,7 +64,7 @@ export function EcosystemHub() {
       <section id="hub-content" className="ecosystem-hub__section marketing-panel">
         <h2>Content hub</h2>
         <p>
-          Centralize discovery and Nexus intelligence: live token feed, search, risk snapshots, and Pulse for accounts and
+          Centralize discovery with The Nexus: live token feed, search, risk snapshots, and Pulse for accounts and
           Nexus Pro.
         </p>
         <ul className="ecosystem-hub__links">

@@ -62,6 +62,7 @@ type AuthMessage = {
 const PLAN_STORAGE_KEY = "hivemind_paid_plan";
 const DEMO_SESSION_KEY = "hivemind_demo_session";
 const LOCAL_REPORTS_KEY = "hivemind_pending_reports";
+const USER_FRIENDLY_ERROR = "Something went wrong. Please try again.";
 
 function normalizeStoredPlan(plan: string | null | undefined): AppPlan {
   if (plan === "PRO") return "PRO";
@@ -97,13 +98,13 @@ function describeAuthError(err: unknown): string {
     lower.includes("undefined_table") ||
     lower.includes("42p01")
   ) {
-    return "We could not reach your account right now. Please try again in a moment.";
+    return USER_FRIENDLY_ERROR;
   }
-  return "Something went wrong. Please try again.";
+  return USER_FRIENDLY_ERROR;
 }
 
 function friendlyActionError(): string {
-  return "We could not complete that action. Please try again shortly.";
+  return USER_FRIENDLY_ERROR;
 }
 
 /** Pulse: show Aegis, Pulse, Titan, Cipher (no “Sentinel …” prefix). */
@@ -111,7 +112,7 @@ function pulseSentinelDisplayName(fullName: string) {
   return fullName.startsWith("Sentinel ") ? fullName.slice("Sentinel ".length) : fullName;
 }
 
-/** Pulse: shorten known agent names inside Mother-generated strings. */
+/** Shorten agent names (Sentinel Aegis → Aegis) inside generated brief strings. */
 function pulseFormatSentinelNamesInText(text: string) {
   return text
     .replace(/Sentinel Aegis/g, "Aegis")
@@ -136,7 +137,7 @@ export function Pulse() {
   const [paidSignals, setPaidSignals] = useState<PaidSignal[]>([]);
   const [sentinelIdle, setSentinelIdle] = useState(getSentinelIdleMessage(Date.now()));
   const [authBusy, setAuthBusy] = useState(false);
-  const [authLoadPhrase, setAuthLoadPhrase] = useState<"nexus" | "mother">("nexus");
+  const [authLoadPhrase, setAuthLoadPhrase] = useState<"nexus" | "sentinel">("nexus");
   const [authMessage, setAuthMessage] = useState<AuthMessage>({
     tone: "info",
     text: hasSupabaseEnv
@@ -150,7 +151,7 @@ export function Pulse() {
     if (!authBusy) return;
     setAuthLoadPhrase("nexus");
     const id = window.setInterval(() => {
-      setAuthLoadPhrase((p) => (p === "nexus" ? "mother" : "nexus"));
+      setAuthLoadPhrase((p) => (p === "nexus" ? "sentinel" : "nexus"));
     }, 1400);
     return () => window.clearInterval(id);
   }, [authBusy]);
@@ -285,7 +286,7 @@ export function Pulse() {
         window.history.replaceState(null, "", window.location.pathname);
       })
       .catch(() => {
-        setStatus("Checkout succeeded, but we could not update your plan. Please contact support.");
+        setStatus(USER_FRIENDLY_ERROR);
       });
   }, [userId]);
 
@@ -298,7 +299,7 @@ export function Pulse() {
     }
     try {
       setAuthBusy(true);
-      setAuthMessage({ tone: "info", text: "Connecting to The Nexus..." });
+      setAuthMessage({ tone: "info", text: "Connecting to Nexus..." });
       if (!hasSupabaseEnv) {
         const demoId = `demo-${Date.now()}`;
         localStorage.setItem(DEMO_SESSION_KEY, demoId);
@@ -354,7 +355,7 @@ export function Pulse() {
     }
     try {
       setAuthBusy(true);
-      setAuthMessage({ tone: "info", text: "Connecting to The Nexus..." });
+      setAuthMessage({ tone: "info", text: "Connecting to Nexus..." });
       if (!hasSupabaseEnv) {
         const demoId = localStorage.getItem(DEMO_SESSION_KEY) ?? `demo-${Date.now()}`;
         localStorage.setItem(DEMO_SESSION_KEY, demoId);
@@ -513,14 +514,14 @@ export function Pulse() {
       setAuthMessage({ tone: "success", text: "Signed out." });
       setStatus("Signed out.");
     } catch {
-      setAuthMessage({ tone: "error", text: "We could not sign you out. Please try again." });
+      setAuthMessage({ tone: "error", text: USER_FRIENDLY_ERROR });
       setStatus(friendlyActionError());
     }
   }
 
   async function handleUpgradeTrigger() {
     if (checkoutBusy) return;
-    const checkoutError = "Checkout could not start. Please try again.";
+    const checkoutError = USER_FRIENDLY_ERROR;
     try {
       setCheckoutBusy(true);
       setStatus("Opening secure checkout…");
@@ -547,7 +548,7 @@ export function Pulse() {
 
   function handleMotherReport() {
     setMotherReportStamp(Date.now());
-    setStatus("Mother compiled a fresh Nexus oversight brief.");
+    setStatus("Sentinels refreshed the Nexus overview.");
   }
 
   const warningCalls = tracked.filter((token) => token.guardian_status === "WARNING");
@@ -590,7 +591,7 @@ export function Pulse() {
   );
 
   const authBusyLabel =
-    authLoadPhrase === "nexus" ? "Connecting to The Nexus..." : "Mother synchronizing...";
+    authLoadPhrase === "nexus" ? "Connecting to Nexus..." : "Synchronizing Sentinels...";
 
   return (
     <div className="page">
@@ -618,22 +619,22 @@ export function Pulse() {
           <div>
             <p className="nexus-core-panel__eyebrow">The Nexus</p>
             <h2 className="nexus-core-panel__title">
-              Mother
-              <span className="nexus-core-panel__core-ai">Core AI</span>
+              Mother Core
+              <span className="nexus-core-panel__core-ai">Operator intelligence</span>
             </h2>
           </div>
         </div>
 
         <div className="nexus-core-panel__status" aria-live="polite">
           <p className="nexus-core-panel__status-title">NEXUS ONLINE</p>
-          <p className="nexus-core-panel__status-line">Mother connected.</p>
-          <p className="nexus-core-panel__status-line">4 Sentinels active.</p>
+          <p className="nexus-core-panel__status-line">Mother Core: Platform intelligence online</p>
+          <p className="nexus-core-panel__status-line">4 Sentinels active</p>
         </div>
 
         <p className="nexus-core-panel__briefing">{pulseFormatSentinelNamesInText(motherBriefing)}</p>
         <p className="nexus-core-panel__copy">
-          Mother coordinates Aegis, Pulse, Titan, and Cipher—each lane learns from reports, alerts, watchlists, and
-          hive memory over time.
+          The Nexus coordinates Aegis, Pulse, Titan, and Cipher—each Sentinel lane learns from reports, alerts,
+          watchlists, and hive memory over time.
         </p>
         <div className="mother-report">
           <div className="mother-report__metrics">
@@ -650,7 +651,7 @@ export function Pulse() {
           </ul>
           <p className="mother-report__closing">{motherDailyReport.closingNote}</p>
           <button className="mother-report__button" type="button" onClick={handleMotherReport}>
-            Ask Mother for a fresh brief
+            Ask the Sentinels for a fresh brief
           </button>
         </div>
       </section>
@@ -659,7 +660,7 @@ export function Pulse() {
         <div className="token-section__head">
           <h2 className="token-section__title">Sentinels</h2>
           <p className="token-section__lede">
-            Four specialist agents under Mother · ranks, XP, confidence, and learning memory
+            Four specialist Sentinels—ranks, XP, confidence, and learning memory
           </p>
         </div>
         <div className="synthetic-sentinels">
@@ -700,10 +701,12 @@ export function Pulse() {
 
       <div className="pulse-card">
         <p className="pulse-card__title">Enter the Nexus</p>
-        <p className="pulse-card__subtitle pulse-card__subtitle--premium">Mother awaiting synchronization.</p>
+        <p className="pulse-card__subtitle pulse-card__subtitle--premium">
+          Sentinels online. Market intelligence ready.
+        </p>
         <div className="pulse-form">
           <button className="pulse-demo-button pulse-demo-button--first" onClick={handleDemoMode} type="button">
-            Launch demo mode first
+            Enter the Nexus
           </button>
           <p className={`pulse-auth-message pulse-auth-message--${authMessage.tone}`} role="status">
             {authMessage.text}
@@ -827,33 +830,45 @@ export function Pulse() {
         ) : null}
       </div>
 
-      <div className="pulse-card" id="nexus-pro">
-        <p className="pulse-card__title">Nexus Pro</p>
-        <div className="pulse-tier-grid pulse-tier-grid--single">
-          <article className="pulse-tier-card pulse-tier-card--pro pulse-tier-card--solo">
-            <p className="pulse-tier-card__badge">Included</p>
-            <p className="pulse-tier-card__name">Nexus Pro</p>
-            <p className="pulse-tier-card__price">$19.99/mo</p>
-            <p className="pulse-tier-card__summary">
-              Full Sentinel intelligence, priority live signals, and deeper risk context across the hive.
-            </p>
-          </article>
+      <div className="pulse-card pulse-nexus-pro-wrap" id="nexus-pro">
+        <div className="pulse-nexus-pro-promo">
+          <div className="pulse-nexus-pro-promo__honeycomb" aria-hidden />
+          <p className="pulse-nexus-pro-promo__label">Nexus Pro</p>
+          <p className="pulse-nexus-pro-promo__price">$19.99/month</p>
+          <p className="pulse-nexus-pro-promo__headline">Unlimited trading intelligence. One simple price.</p>
+          <p className="pulse-nexus-pro-promo__body">
+            Unlock the full Nexus system with real-time Sentinel analysis, risk scanning, momentum tracking, whale
+            activity signals, pattern detection, and unlimited trading intelligence tools.
+          </p>
+          <ul className="pulse-nexus-pro-promo__bullets">
+            <li>Unlimited Nexus access</li>
+            <li>Real-time Sentinel signals</li>
+            <li>Scam and risk alerts</li>
+            <li>Whale activity tracking</li>
+            <li>Momentum and trend analysis</li>
+            <li>Pattern recognition insights</li>
+            <li>Fast trading links</li>
+            <li>Priority platform updates</li>
+          </ul>
+          <div className="pulse-nexus-pro-promo__cta-wrap">
+            {plan !== "PRO" ? (
+              <button
+                type="button"
+                className="pulse-button--pro pulse-nexus-pro-promo__cta"
+                disabled={checkoutBusy}
+                onClick={() => void handleUpgradeTrigger()}
+              >
+                {checkoutBusy ? "Opening…" : "Upgrade to Nexus Pro — $19.99/month"}
+              </button>
+            ) : (
+              <p className="pulse-nexus-pro-promo__active">Nexus Pro is active on your account.</p>
+            )}
+          </div>
+          <p className="pulse-nexus-pro-promo__disclaimer">
+            Cancel anytime. No financial advice. Trade at your own risk.
+          </p>
         </div>
-        <div className="pulse-actions pulse-actions--tiers">
-          {plan !== "PRO" ? (
-            <button
-              type="button"
-              className="pulse-button--pro"
-              disabled={checkoutBusy}
-              onClick={() => void handleUpgradeTrigger()}
-            >
-              {checkoutBusy ? "Opening…" : "Upgrade to Nexus Pro — $19.99/month"}
-            </button>
-          ) : (
-            <p className="pulse-card__body">Nexus Pro is active on your account.</p>
-          )}
-        </div>
-        <p className="pulse-card__body">Current plan: {formatPlanName(plan)}</p>
+        <p className="pulse-card__body pulse-nexus-pro-wrap__plan">Current plan: {formatPlanName(plan)}</p>
         {visibleSignals.length ? (
           <ul className="pulse-list">
             {visibleSignals.map((signal) => (

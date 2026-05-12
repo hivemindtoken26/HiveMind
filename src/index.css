@@ -1989,6 +1989,136 @@ a {
   }
 }
 
+.pulse-nexus-pro-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.pulse-nexus-pro-wrap__plan {
+  margin-top: 16px;
+}
+
+.pulse-nexus-pro-promo {
+  position: relative;
+  border-radius: 16px;
+  padding: 20px 18px 18px;
+  border: 1px solid rgba(137, 255, 47, 0.35);
+  background:
+    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(137, 255, 47, 0.12), transparent 55%),
+    linear-gradient(165deg, rgba(8, 22, 10, 0.98), rgba(2, 6, 4, 0.99));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 40px rgba(80, 200, 100, 0.08);
+}
+
+.pulse-nexus-pro-promo__honeycomb {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(137, 255, 47, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137, 255, 47, 0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
+}
+
+.pulse-nexus-pro-promo__label {
+  position: relative;
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #baff2f;
+  text-shadow: 0 0 16px rgba(137, 255, 47, 0.45);
+}
+
+.pulse-nexus-pro-promo__price {
+  position: relative;
+  margin: 8px 0 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ecffd2;
+  letter-spacing: 0.02em;
+}
+
+.pulse-nexus-pro-promo__headline {
+  position: relative;
+  margin: 14px 0 0;
+  font-size: 1.02rem;
+  font-weight: 750;
+  line-height: 1.35;
+  color: #f2ffe8;
+}
+
+.pulse-nexus-pro-promo__body {
+  position: relative;
+  margin: 10px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(200, 230, 210, 0.88);
+}
+
+.pulse-nexus-pro-promo__bullets {
+  position: relative;
+  margin: 14px 0 0;
+  padding: 0 0 0 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: rgba(220, 255, 215, 0.82);
+}
+
+.pulse-nexus-pro-promo__bullets li {
+  padding-left: 2px;
+}
+
+.pulse-nexus-pro-promo__cta-wrap {
+  position: relative;
+  margin-top: 18px;
+}
+
+.pulse-nexus-pro-promo__cta {
+  width: 100%;
+  animation: pulse-nexus-cta-glow 2.4s ease-in-out infinite;
+}
+
+.pulse-nexus-pro-promo__active {
+  margin: 0;
+  text-align: center;
+  font-size: 0.92rem;
+  color: #c8ffc4;
+}
+
+.pulse-nexus-pro-promo__disclaimer {
+  position: relative;
+  margin: 14px 0 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: rgba(180, 210, 190, 0.65);
+  text-align: center;
+}
+
+@keyframes pulse-nexus-cta-glow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 0 0 1px rgba(0, 0, 0, 0.45),
+      0 8px 28px rgba(0, 0, 0, 0.35),
+      0 0 36px rgba(120, 255, 100, 0.14);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 1px rgba(0, 0, 0, 0.4),
+      0 8px 32px rgba(0, 0, 0, 0.32),
+      0 0 48px rgba(130, 255, 110, 0.28);
+  }
+}
+
 .pulse-tier-grid--single {
   grid-template-columns: 1fr;
   max-width: 420px;
@@ -3380,6 +3510,10 @@ a {
 
   .synthetic-sentinel:hover {
     transform: none;
+  }
+
+  .pulse-nexus-pro-promo__cta {
+    animation: none !important;
   }
 
   .nexus-boot {

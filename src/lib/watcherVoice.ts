@@ -1,7 +1,8 @@
 const sentinelIdleMessages = [
+  "Sentinels are analyzing the market.",
+  "The Nexus is scanning risk, momentum, whales, and patterns.",
   "Sentinels are observing liquidity flow across The Nexus.",
   "Sentinels are tracking volume spikes in real time.",
-  "Sentinels are monitoring contract behavior for risk shifts.",
 ];
 
 /** User-facing risk copy for Sentinel / Nexus intelligence. */

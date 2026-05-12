@@ -103,8 +103,8 @@ export function HomeFeed() {
         <article className="landing-info-card">
           <h2>Detect risks. Track whales. Flag scams.</h2>
           <p>
-            The Nexus routes work through Mother and four Sentinels—Sentinel Aegis, Sentinel Pulse, Sentinel
-            Titan, and Sentinel Cipher—so you get one coherent signal instead of noise.
+            The Nexus routes signals through four Sentinels—Sentinel Aegis, Sentinel Pulse, Sentinel Titan, and Sentinel
+            Cipher—so you get one coherent read instead of noise.
           </p>
         </article>
         <article className="landing-info-card landing-info-card--warning">
