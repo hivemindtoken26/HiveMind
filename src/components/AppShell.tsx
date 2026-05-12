@@ -1,5 +1,6 @@
 import { Link, Outlet } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
+import { NexusProUpsellModal } from "./NexusProUpsellModal";
 
 export function AppShell() {
   return (
@@ -19,6 +20,7 @@ export function AppShell() {
         </Link>
       </footer>
       <BottomNav />
+      <NexusProUpsellModal />
     </div>
   );
 }

@@ -2119,6 +2119,182 @@ a {
   }
 }
 
+/* ----- Nexus Pro upsell modal (app-wide, non-Pro users) ----- */
+.nexus-pro-upsell {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0)) max(16px, env(safe-area-inset-right, 0))
+    max(max(16px, env(safe-area-inset-bottom, 0)), 12px) max(16px, env(safe-area-inset-left, 0));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.nexus-pro-upsell--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nexus-pro-upsell__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 3, 2, 0.82);
+  backdrop-filter: blur(5px);
+}
+
+.nexus-pro-upsell__panel {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 20px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(137, 255, 47, 0.4);
+  background:
+    radial-gradient(ellipse 95% 55% at 50% 0%, rgba(137, 255, 47, 0.12), transparent 55%),
+    linear-gradient(168deg, #0c0e0d 0%, #050605 55%, #030403 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 20px 56px rgba(0, 0, 0, 0.55),
+    0 0 48px rgba(90, 220, 110, 0.12);
+  transform: translateY(20px) scale(0.97);
+  opacity: 0;
+  transition:
+    transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.42s ease;
+}
+
+.nexus-pro-upsell--open .nexus-pro-upsell__panel {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.nexus-pro-upsell__honeycomb {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.16;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(137, 255, 47, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137, 255, 47, 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 90%);
+}
+
+.nexus-pro-upsell__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(137, 255, 47, 0.38);
+  border-radius: 10px;
+  background: rgba(5, 10, 7, 0.92);
+  color: #c8ffc4;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.nexus-pro-upsell__close:hover {
+  border-color: rgba(186, 255, 140, 0.55);
+  box-shadow: 0 0 18px rgba(120, 255, 100, 0.18);
+}
+
+.nexus-pro-upsell__headline {
+  position: relative;
+  margin: 4px 42px 0 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #baff2f;
+  text-shadow: 0 0 22px rgba(137, 255, 47, 0.45);
+}
+
+.nexus-pro-upsell__sub {
+  position: relative;
+  margin: 12px 0 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.4;
+  color: rgba(235, 255, 225, 0.92);
+}
+
+.nexus-pro-upsell__unlock-label {
+  position: relative;
+  margin: 18px 0 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(170, 255, 195, 0.75);
+}
+
+.nexus-pro-upsell__list {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  line-height: 1.42;
+  color: rgba(210, 245, 215, 0.88);
+}
+
+.nexus-pro-upsell__error {
+  position: relative;
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: #ffc8c8;
+}
+
+.nexus-pro-upsell__cta {
+  position: relative;
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(170, 255, 130, 0.52);
+  background: linear-gradient(165deg, rgba(24, 44, 28, 0.98) 0%, rgba(8, 14, 10, 1) 100%);
+  color: #ecffd2;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  animation: pulse-nexus-cta-glow 2.5s ease-in-out infinite;
+}
+
+.nexus-pro-upsell__cta:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.nexus-pro-upsell__fineprint {
+  position: relative;
+  margin: 14px 0 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  text-align: center;
+  color: rgba(165, 195, 175, 0.62);
+}
+
 .pulse-tier-grid--single {
   grid-template-columns: 1fr;
   max-width: 420px;
@@ -3514,6 +3690,20 @@ a {
 
   .pulse-nexus-pro-promo__cta {
     animation: none !important;
+  }
+
+  .nexus-pro-upsell,
+  .nexus-pro-upsell__panel {
+    transition: none !important;
+  }
+
+  .nexus-pro-upsell__cta {
+    animation: none !important;
+  }
+
+  .nexus-pro-upsell--open .nexus-pro-upsell__panel {
+    transform: none !important;
+    opacity: 1 !important;
   }
 
   .nexus-boot {
