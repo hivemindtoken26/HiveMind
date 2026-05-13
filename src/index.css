@@ -2119,13 +2119,22 @@ a {
   }
 }
 
-/* ----- Synexus Pro floating promo (after boot intro) ----- */
-@keyframes synexus-pro-upsell-drift {
-  from {
-    transform: translate3d(calc(-100% - 16px), 0, 0);
+/* ----- Synexus Pro promo: two slow fade cycles, then hides (session) ----- */
+@keyframes synexus-pro-upsell-pulse-cycle {
+  0% {
+    opacity: 0;
   }
-  to {
-    transform: translate3d(calc(100vw + 16px), 0, 0);
+  18% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 1;
+  }
+  58% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
   }
 }
 
@@ -2152,31 +2161,24 @@ a {
   background: rgba(2, 4, 3, 0.12);
 }
 
-.synexus-pro-upsell__float-shell {
+.synexus-pro-upsell__stage-shell {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: clamp(76px, 16vh, 160px);
-  height: min(148px, 22vh);
-  overflow: visible;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: clamp(76px, 16vh, 160px);
   pointer-events: none;
 }
 
-.synexus-pro-upsell--open .synexus-pro-upsell__float-shell {
+.synexus-pro-upsell--open .synexus-pro-upsell__stage-shell {
   pointer-events: auto;
 }
 
-.synexus-pro-upsell__drift {
-  position: absolute;
-  left: 0;
-  top: 0;
-  will-change: transform;
-  animation: synexus-pro-upsell-drift 28s linear infinite;
-  animation-play-state: paused;
-}
-
-.synexus-pro-upsell--open .synexus-pro-upsell__drift {
-  animation-play-state: running;
+.synexus-pro-upsell__pulse {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .synexus-pro-upsell__panel {
@@ -2196,11 +2198,10 @@ a {
     0 10px 32px rgba(0, 0, 0, 0.45),
     0 0 32px rgba(90, 220, 110, 0.1);
   opacity: 0;
-  transition: opacity 0.42s ease;
 }
 
 .synexus-pro-upsell--open .synexus-pro-upsell__panel {
-  opacity: 1;
+  animation: synexus-pro-upsell-pulse-cycle 14s cubic-bezier(0.42, 0, 0.58, 1) 2 forwards;
 }
 
 .synexus-pro-upsell__honeycomb {
@@ -2307,22 +2308,6 @@ a {
   line-height: 1.42;
   text-align: center;
   color: rgba(165, 195, 175, 0.58);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .synexus-pro-upsell__drift {
-    position: relative;
-    left: 50%;
-    transform: translate3d(-50%, 0, 0);
-    animation: none;
-    animation-play-state: paused;
-    margin-inline: auto;
-    width: max-content;
-  }
-
-  .synexus-pro-upsell__panel {
-    width: min(268px, 86vw);
-  }
 }
 
 .pulse-tier-grid--single {
@@ -3722,7 +3707,6 @@ a {
     animation: none !important;
   }
 
-  .synexus-pro-upsell,
   .synexus-pro-upsell__panel {
     transition: none !important;
   }
@@ -3732,8 +3716,8 @@ a {
   }
 
   .synexus-pro-upsell--open .synexus-pro-upsell__panel {
-    transform: none !important;
-    opacity: 1 !important;
+    animation-duration: 6s !important;
+    animation-timing-function: ease-in-out !important;
   }
 
   .synexus-boot {

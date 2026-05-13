@@ -4,9 +4,13 @@ import { isSynexusBootComplete, subscribeSynexusBootComplete } from "../lib/syne
 
 const PLAN_STORAGE_KEY = "hivemind_paid_plan";
 const DISMISS_STORAGE_KEY = "hivemind_synexus_pro_upsell_dismissed_at";
+/** Auto pulse runs twice then hides until next tab/session or timed reopen after dismiss. */
+const AUTO_PROMO_SESSION_KEY = "hivemind_synexus_promo_pulse_completed";
+/** CSS animation-name on `.synexus-pro-upsell__panel` (must match index.css). */
+const PROMO_PULSE_ANIMATION = "synexus-pro-upsell-pulse-cycle";
 /** Show again after this many ms if the user closes without upgrading. */
 const DISMISS_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-/** After boot intro completes, extra pause before the floating promo appears. */
+/** After boot intro completes, extra pause before the promo appears. */
 const OPEN_DELAY_MS = 900;
 const UNMOUNT_AFTER_CLOSE_MS = 480;
 const USER_ERROR = "Something went wrong. Please try again.";
@@ -16,6 +20,22 @@ function isSynexusProPlan(): boolean {
     return localStorage.getItem(PLAN_STORAGE_KEY) === "PRO";
   } catch {
     return false;
+  }
+}
+
+function autoPromoAlreadyPlayedThisSession(): boolean {
+  try {
+    return sessionStorage.getItem(AUTO_PROMO_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markAutoPromoPlayedThisSession(): void {
+  try {
+    sessionStorage.setItem(AUTO_PROMO_SESSION_KEY, "1");
+  } catch {
+    /* ignore */
   }
 }
 
@@ -95,6 +115,8 @@ export function SynexusProUpsellModal() {
       return;
     }
 
+    if (autoPromoAlreadyPlayedThisSession()) return;
+
     if (!bootComplete) return;
 
     openDelayRef.current = setTimeout(() => {
@@ -163,6 +185,23 @@ export function SynexusProUpsellModal() {
     }
   }
 
+  function finishAutoPromoSequence() {
+    markAutoPromoPlayedThisSession();
+    setOpen(false);
+    setError(null);
+    if (unmountRef.current) clearTimeout(unmountRef.current);
+    unmountRef.current = setTimeout(() => {
+      unmountRef.current = null;
+      setMounted(false);
+    }, UNMOUNT_AFTER_CLOSE_MS);
+  }
+
+  function handlePanelAnimationEnd(e: React.AnimationEvent<HTMLDivElement>) {
+    if (e.animationName !== PROMO_PULSE_ANIMATION) return;
+    if (e.target !== e.currentTarget) return;
+    finishAutoPromoSequence();
+  }
+
   if (!mounted) return null;
 
   return (
@@ -173,9 +212,9 @@ export function SynexusProUpsellModal() {
       aria-labelledby="synexus-pro-upsell-headline"
     >
       <div className="synexus-pro-upsell__backdrop" aria-hidden />
-      <div className="synexus-pro-upsell__float-shell">
-        <div className="synexus-pro-upsell__drift" aria-hidden={!open}>
-          <div className="synexus-pro-upsell__panel">
+      <div className="synexus-pro-upsell__stage-shell">
+        <div className="synexus-pro-upsell__pulse">
+          <div className="synexus-pro-upsell__panel" onAnimationEnd={handlePanelAnimationEnd}>
             <div className="synexus-pro-upsell__honeycomb" aria-hidden />
             <button type="button" className="synexus-pro-upsell__close" onClick={close} aria-label="Close">
               ×
